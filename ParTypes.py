@@ -1,4 +1,8 @@
 from manim import *
+from decimal import *
+
+getcontext().prec = 6
+
 
 class BaseRectangle:
     def __init__(self, width, height):
@@ -32,11 +36,21 @@ class MyPoint:
     def render(self, ax):
         self.mobject.move_to(ax.c2p(self.x, self.y, 0))
 
+    def to_vec(self):
+        return np.array([self.x, self.y])
+
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
+        return Decimal(f"{self.x:.9f}") == Decimal(f"{other.x:.9f}") and \
+               Decimal(f"{self.y:.9f}") == Decimal(f"{other.y:.9f}")
 
     def __hash__(self):
         return round(self.x * 1000000 + self.y * 1000)
+
+    def __str__(self):
+        return 'X: ' + str(self.x) + ', Y: ' + str(self.y)
+
+    def __repr__(self):
+        return '<MyPoint: ' + self.__str__() + '>'
 
 
 class PackedRectangle:
@@ -59,7 +73,7 @@ class PackedRectangle:
 
 class Tiling:
     def __init__(self):
-        self.mobject = Dot(radius=0)
+        self.mobject = Rectangle(WHITE, 0, 0)
 
     def union(self, rect):
         self.mobject = Union(self.mobject, rect)
