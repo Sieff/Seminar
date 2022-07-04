@@ -7,6 +7,7 @@ seed = random.randrange(sys.maxsize)
 random.seed(seed)
 print("Seed was:", seed)
 
+
 def order_points(points):
     point_array = []
     for point in points:
@@ -109,12 +110,17 @@ def get_directions(vertices):
     return np.array(result)
 
 
-def get_combinations(directions, target_dir):
+def get_combinations(vertices, target_dir):
+    directions = get_directions(vertices)
     parity = 0
     combinations = []
     for i in range(2, len(directions) - 2):
         if directions[i+1] == directions[i] == target_dir and parity == 0:
-            combinations.append([i, i + 2])
+            if directions[i-1] == target_dir:
+                if (target_dir == 'l' and vertices[i-2].y < vertices[i+2].y) or (target_dir == 'r' and vertices[i-2].x < vertices[i+2].x):
+                    combinations.append([i, i + 2])
+            else:
+                combinations.append([i, i + 2])
         if directions[i] == target_dir:
             parity = parity + 1
         else:
@@ -123,15 +129,27 @@ def get_combinations(directions, target_dir):
 
 
 def remove_overhangs(vertices, target_dir):
-    combinations = get_combinations(get_directions(vertices), target_dir)
+    combinations = get_combinations(vertices, target_dir)
     for i in range(len(combinations)):
         c = combinations[i]
         if target_dir == 'l':
-            vertices = np.append(np.append(vertices[:c[0]], [MyPoint(vertices[c[0]].x, vertices[c[1]].y)]),
-                                 vertices[c[1] + 1:])
+            if vertices[c[0]-1].y > vertices[c[1]].y:
+                vertices = np.append(np.append(vertices[:c[0]-1], [MyPoint(vertices[c[1]].x, vertices[c[0]-1].y)]),
+                                     vertices[c[1]:])
+            elif vertices[c[0]-1].y < vertices[c[1]].y:
+                vertices = np.append(np.append(vertices[:c[0]], [MyPoint(vertices[c[0]].x, vertices[c[1]].y)]),
+                                     vertices[c[1] + 1:])
+            elif vertices[c[0]-1].y == vertices[c[1]].y:
+                vertices = np.append(vertices[:c[0]-1], vertices[c[1]+1:])
         else:
-            vertices = np.append(np.append(vertices[:c[0]], [MyPoint(vertices[c[1]].x, vertices[c[0]].y)]),
-                                 vertices[c[1] + 1:])
+            if vertices[c[0]-1].x > vertices[c[1]].x:
+                vertices = np.append(np.append(vertices[:c[0]-1], [MyPoint(vertices[c[0]-1].x, vertices[c[1]].y)]),
+                                     vertices[c[1]:])
+            elif vertices[c[0]-1].x < vertices[c[1]].x:
+                vertices = np.append(np.append(vertices[:c[0]], [MyPoint(vertices[c[1]].x, vertices[c[0]].y)]),
+                                     vertices[c[1] + 1:])
+            elif vertices[c[0]-1].x == vertices[c[1]].x:
+                vertices = np.append(vertices[:c[0]-1], vertices[c[1]+1:])
         combinations = combinations - (c[1] - c[0])
     return remove_doubles(vertices)
 
@@ -208,10 +226,10 @@ def get_greedy_tile(vertices):
         old_v = vertices.copy()
         vertices = remove_overhangs(vertices, 'l')
         vertices = flip_vertices(vertices)
-        vertices = remove_loops(vertices)
+        #vertices = remove_loops(vertices)
         vertices = remove_overhangs(vertices, 'r')
         vertices = flip_vertices(vertices)
-        vertices = remove_loops(vertices)
+        #vertices = remove_loops(vertices)
         if compare_v_list(old_v, vertices):
             break
     return vertices
@@ -228,7 +246,7 @@ def get_maximal_rect_target(start, tile_points):
     vertices = get_vertices(start, tile_points)
     polygon = Polygon(*vertices_as_sequence(vertices))
     vertices = get_greedy_tile(vertices)
-    polygon2 = Polygon(*vertices_as_sequence(vertices)).shift(RIGHT * 2)
+    polygon2 = Polygon(*vertices_as_sequence(vertices))
     max_area = 0
     argmax_area = -1
     for i in range(len(vertices)):
@@ -244,7 +262,7 @@ class PackingGreedyRectangles(Scene):
     def construct(self):
         scaling = 5
         base_rect = BaseRectangle(1, 1)
-        for i in range(20):
+        for i in range(10):
             x = random.uniform(0, 1)
             y = random.uniform(0, 1)
             base_rect.add_point(x, y)
@@ -253,6 +271,9 @@ class PackingGreedyRectangles(Scene):
             y_range=[0, 2, 1],
             x_length=scaling,
             y_length=scaling,
+            axis_config={
+                "numbers_to_include": [1],
+            }
         )
         self.add(ax)
         base_rect.render(ax, scaling / 2)
@@ -263,12 +284,6 @@ class PackingGreedyRectangles(Scene):
         self.wait()
         ordered_points = order_points(base_rect.pointsSet)
         tiling = Tiling()
-        poly = Dot()
-        self.add(poly)
-        poly2 = Dot()
-        self.add(poly2)
-        old_tile = Dot()
-        self.add(old_tile)
         for point in ordered_points:
             packed_rectangle = PackedRectangle(point, MyPoint(1, 1))
             packed_rectangle.render(ax, scaling)
@@ -276,14 +291,5 @@ class PackingGreedyRectangles(Scene):
             tile_points = ax.p2c(tile.points)
             maximal_rect_target, new_poly, new_poly2 = get_maximal_rect_target(packed_rectangle.start, tile_points)
             packed_rectangle = PackedRectangle(point, maximal_rect_target).render(ax, scaling)
-            self.remove(poly)
-            self.add(new_poly)
-            self.remove(old_tile)
-            self.add(tile.shift(UP * 3))
-            old_tile = tile
-            self.remove(poly2)
-            self.add(new_poly2)
-            poly = new_poly
-            poly2 = new_poly2
             self.play(Transform(point.mobject, packed_rectangle.mobject))
             tiling.union(packed_rectangle.mobject)

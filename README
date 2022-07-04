@@ -1,1 +1,3 @@
-docker run --rm -it -v "C:\\Users\\steff\\Documents\\mad\\Seminar:/manim" manimcommunity/manim manim -qm scene.py CreateCircle
+docker run --rm -it -v "C:\\Users\\steff\\Documents\\mad\\Seminar:/manim" manimcommunity/manim manim -qm scene.py PackingGreedyRectangles
+
+docker run --rm -it -v "/home/student/Dokumente/mad/Seminar:/manim" manimcommunity/manim manim -qh scene.py PackingGreedyRectangles

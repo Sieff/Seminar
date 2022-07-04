@@ -48,8 +48,8 @@ class MyPoint:
         return np.array([self.x*2, self.y*2, 0])
 
     def __eq__(self, other):
-        return Decimal(f"{self.x:.5f}") == Decimal(f"{other.x:.5f}") and \
-               Decimal(f"{self.y:.5f}") == Decimal(f"{other.y:.5f}")
+        return Decimal(self.x).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) == Decimal(other.x).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) and \
+               Decimal(self.y).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) == Decimal(other.y).quantize(Decimal('1.00000'), rounding=ROUND_DOWN)
 
     def __hash__(self):
         return round(self.x * 1000000 + self.y * 1000)
