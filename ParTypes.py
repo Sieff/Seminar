@@ -6,18 +6,58 @@ from MyMath import *
 from manim import *
 from decimal import *
 
+import random
+
+#seed = 723637645
+seed = random.randrange(sys.maxsize)
+random.seed(seed)
+print("Seed was:", seed)
+
 getcontext().prec = 6
 
 
+def vertices_as_sequence(v):
+    result = []
+    for i in v:
+        result.append(i.to_vec3d())
+    return result
+
+
 class BaseRectangle:
-    def __init__(self, width, height):
+    def __init__(self, width=1, height=1, init_points_type='RANDOM', num_points=5, points=[]):
         self.height = height
         self.width = width
         self.pointsSet = {MyPoint(0, 0)}
         self.mobject = Rectangle(WHITE, width, height)
+        self._init_points(init_points_type, num_points, points)
 
-    def construct(self, width=1, height=1):
-        self.__init__(width, height)
+    def _init_points(self, type, num_points, points):
+        if type == 'RANDOM':
+            for i in range(num_points):
+                x = random.uniform(0, self.width)
+                y = random.uniform(0, self.height)
+                self.add_point(x, y)
+        elif type == 'CUSTOM':
+            for point in points:
+                self.add_point(point.x, point.y)
+        elif type == 'DIAGONAL':
+            for i in range(0, num_points):
+                self.add_point(i * 1 / num_points, i * 1 / num_points)
+        elif type == 'BETA':
+            self.add_point(0.5, 0.5)
+            self.add_point(0.5, 0.6)
+            self.add_point(0.6, 0.5)
+            self.add_point(0.513, 0.591)
+            self.add_point(0.516, 0.565)
+            self.add_point(0.519, 0.545)
+            self.add_point(0.531, 0.526)
+            self.add_point(0.547, 0.519)
+            self.add_point(0.559, 0.517)
+            self.add_point(0.583, 0.513)
+        elif type == 'GREEDYBETTER':
+            self.add_point(0.7, 0.75)
+            self.add_point(0.35, 0.65)
+            self.add_point(0.8, 0.2)
 
     def add_point(self, x, y):
         if 1 >= x >= 0 and 1 >= y >= 0:
@@ -40,16 +80,20 @@ class MyPoint:
 
     def render(self, ax):
         self.mobject.move_to(ax.c2p(self.x, self.y, 0))
+        return self
 
     def to_vec2d(self):
         return np.array([self.x, self.y])
 
     def to_vec3d(self):
-        return np.array([self.x*2, self.y*2, 0])
+        return np.array([self.x * 2, self.y * 2, 0])
 
     def __eq__(self, other):
-        return Decimal(self.x).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) == Decimal(other.x).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) and \
-               Decimal(self.y).quantize(Decimal('1.00000'), rounding=ROUND_DOWN) == Decimal(other.y).quantize(Decimal('1.00000'), rounding=ROUND_DOWN)
+        quantizer = '1.00000'
+        return Decimal(str(self.x)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.x)).quantize(
+            Decimal(quantizer), rounding=ROUND_DOWN) and \
+               Decimal(str(self.y)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.y)).quantize(
+            Decimal(quantizer), rounding=ROUND_DOWN)
 
     def __hash__(self):
         return round(self.x * 1000000 + self.y * 1000)
@@ -91,16 +135,18 @@ class MyLine:
         return True
 
     def parallels(self, other):
-        my_o = self.end.to_vec2d() - self.start.to_vec2d() / np.sqrt(np.sum((self.end.to_vec2d() - self.start.to_vec2d())**2))
-        other_o = other.end.to_vec2d() - other.start.to_vec2d() / np.sqrt(np.sum((other.end.to_vec2d() - other.start.to_vec2d())**2))
+        my_o = self.end.to_vec2d() - self.start.to_vec2d() / np.sqrt(
+            np.sum((self.end.to_vec2d() - self.start.to_vec2d()) ** 2))
+        other_o = other.end.to_vec2d() - other.start.to_vec2d() / np.sqrt(
+            np.sum((other.end.to_vec2d() - other.start.to_vec2d()) ** 2))
         return self._array_eq(my_o, other_o) or self._array_eq(my_o, other_o * -1)
 
     def __str__(self):
-        return '    Start: ' + self.start.__str__() + '\n' +\
+        return '    Start: ' + self.start.__str__() + '\n' + \
                '    End: : ' + self.end.__str__()
 
     def __repr__(self):
-        return '<MyLine: \n'\
+        return '<MyLine: \n' \
                + self.__str__() + '>\n'
 
     def __eq__(self, other):
@@ -125,6 +171,17 @@ class PackedRectangle:
         self.mobject.scale(scaling / 2)
         self.mobject.move_to(ax.c2p(self.start.x, self.start.y))
         self.mobject.shift(UP * scaling / 2 * (self.height / 2), RIGHT * scaling / 2 * (self.width / 2))
+        return self
+
+
+class PossiblePolygon:
+    def __init__(self, point, vertices):
+        self.point = point
+        self.mobject = Polygon(*vertices_as_sequence(vertices), color=GREEN, fill_color=GREEN, fill_opacity=0.4)
+
+    def render(self, ax, scaling):
+        self.mobject.scale(scaling / 4)
+        self.mobject.align_to(ax.c2p(self.point.x, self.point.y), DOWN + LEFT)
         return self
 
 
