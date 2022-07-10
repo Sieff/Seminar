@@ -1,4 +1,5 @@
-from manim import *
+from LatexMobjects.Construction import tex_greedy, tex_tile
+from LatexMobjects.Introduction import IntroTex
 from Packing import Packing
 from ParTypes import *
 
@@ -13,16 +14,104 @@ def align_ax_origins(to_ax, from_ax):
     return target - start
 
 
-class PackingGreedyRectangles(Scene):
+def init_axes(scaling, offset=ORIGIN):
+    ax = Axes(
+        x_range=[0, 2, 1],
+        y_range=[0, 2, 1],
+        x_length=scaling,
+        y_length=scaling,
+        axis_config={
+            "numbers_to_include": [1],
+        }
+    ).shift(LEFT * 3 + offset)
+
+    invis_ax_size = 4
+    invis_ax = Axes(
+        x_range=[-invis_ax_size, invis_ax_size, 1],
+        y_range=[-invis_ax_size, invis_ax_size, 1],
+        x_length=invis_ax_size * scaling,
+        y_length=invis_ax_size * scaling
+    )
+    invis_ax.shift(align_ax_origins(ax, invis_ax))
+    return ax, invis_ax
+
+
+class MyScene(Scene):
+    def timed_que(self, duration=0):
+        position = [6.5, -3, 0]
+        radius = 0.03
+        spacing = radius * 3
+        dot1 = Dot(position, radius=radius)
+        dot2 = Dot(position, radius=radius).shift(DOWN * spacing)
+        dot3 = Dot(position, radius=radius).shift(DOWN * spacing * 2)
+        self.wait(duration)
+        self.play(AnimationGroup(Create(dot1),
+                                 Create(dot2),
+                                 Create(dot3)))
+        self.play(LaggedStart(FadeOut(dot1),
+                              FadeOut(dot2),
+                              FadeOut(dot3), lag_ratio=1))
+
+
+class Animator:
+    def __init__(self):
+        super().__init__()
+        self.animations = []
+
+    def play(self, animation):
+        self.animations.append(animation)
+
+
+class Introduction(MyScene):
     def construct(self):
         scaling = 5
-        ax, invis_ax = self.init_axes(scaling)
-        packing = Packing(BaseRectangle(1, 1, 'RANDOM', num_points=10), ax, scaling)
+        ax, invis_ax = init_axes(scaling)
+        self.add(ax)
+        packing = Packing(BaseRectangle(1, 1, 'INTRO', num_points=10), ax, scaling)
+        self.play(AnimationGroup(FadeIn(packing.base_rect.mobject),
+                                 FadeIn(packing.base_rect.label),
+                                 IntroTex.mobject_writes[0]))
+        self.play(AnimationGroup(FadeOut(packing.base_rect.label),
+                                 LaggedStart(*packing.get_points_creations()),
+                                 IntroTex.mobject_writes[1]))
+        self.play(AnimationGroup(*packing.get_rectangle_transforms(),
+                                 IntroTex.mobject_writes[2]))
+
+
+class DiagonalPacking(MyScene):
+    def construct(self):
+        scaling = 5
+        ax, invis_ax = init_axes(scaling)
+        self.add(ax)
+        packing = Packing(BaseRectangle(1, 1, 'DIAGONAL', num_points=10), ax, scaling)
         self.add(packing.base_rect.mobject)
         self.play(LaggedStart(*packing.get_points_creations()))
-        self.greedy(packing, invis_ax)
+        self.play(LaggedStart(*packing.get_rectangle_transforms()))
 
-    def greedy(self, packing, invis_ax):
+
+class SweepingLine(MyScene):
+    def construct(self):
+        scaling = 5
+        ax, invis_ax = init_axes(scaling)
+        self.add(ax)
+        packing = Packing(BaseRectangle(1, 1, 'INTRO', num_points=10), ax, scaling)
+        self.add(packing.base_rect.mobject)
+        self.play(LaggedStart(*packing.get_points_creations()))
+        scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(MyPoint(1, 1)), color=ORANGE)
+        self.play(FadeIn(scan_line))
+        for point in packing.ordered_points:
+            new_scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(point), color=ORANGE)
+            self.play(Transform(scan_line, new_scan_line))
+        self.play(FadeOut(scan_line))
+
+
+class GreedyPackingAnimator(Animator):
+    def animate(self, offset=ORIGIN, packing_type='INTRO'):
+        scaling = 5
+        ax, invis_ax = init_axes(scaling, offset)
+        packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
+        self.play(LaggedStart(*packing.get_points_creations()))
+
         scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(MyPoint(1, 1)), color=ORANGE)
         self.play(FadeIn(scan_line))
         for idx, packed_rectangle in enumerate(packing.greedy_rectangles):
@@ -36,9 +125,26 @@ class PackingGreedyRectangles(Scene):
         self.play(FadeIn(packing.greedy_unpacked_space))
         self.play(FadeOut(packing.greedy_unpacked_space))
         self.play(FadeIn(packing.greedy_unpacked_space))
-        self.play(FadeOut(packing.greedy_unpacked_space))
+        return ax, packing.base_rect.mobject
 
-    def tiling(self, packing, invis_ax):
+
+class GreedyPacking(Scene):
+    def construct(self):
+        animator = GreedyPackingAnimator()
+        ax, base_rect = animator.animate()
+        self.add(ax)
+        self.add(base_rect)
+        for a in animator.animations:
+            self.play(a)
+
+
+class TilePackingAnimator(Animator):
+    def animate(self, offset=ORIGIN, packing_type='INTRO'):
+        scaling = 5
+        ax, invis_ax = init_axes(scaling, offset)
+        packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
+        self.play(LaggedStart(*packing.get_points_creations()))
+
         scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(MyPoint(1, 1)), color=ORANGE)
         self.play(FadeIn(scan_line))
         for idx, packed_rectangle in enumerate(packing.tiling_rectangles):
@@ -52,26 +158,27 @@ class PackingGreedyRectangles(Scene):
         self.play(FadeIn(packing.tiling_unpacked_space))
         self.play(FadeOut(packing.tiling_unpacked_space))
         self.play(FadeIn(packing.tiling_unpacked_space))
-        self.play(FadeOut(packing.tiling_unpacked_space))
+        return ax, packing.base_rect.mobject
 
-    def init_axes(self, scaling):
-        ax = Axes(
-            x_range=[0, 2, 1],
-            y_range=[0, 2, 1],
-            x_length=scaling,
-            y_length=scaling,
-            axis_config={
-                "numbers_to_include": [1],
-            }
-        ).shift(LEFT * 3)
+
+class TilePacking(Scene):
+    def construct(self):
+        animator = GreedyPackingAnimator()
+        ax, base_rect = animator.animate()
         self.add(ax)
+        self.add(base_rect)
+        for a in animator.animations:
+            self.play(a)
 
-        invis_ax_size = 4
-        invis_ax = Axes(
-            x_range=[-invis_ax_size, invis_ax_size, 1],
-            y_range=[-invis_ax_size, invis_ax_size, 1],
-            x_length=invis_ax_size * scaling,
-            y_length=invis_ax_size * scaling
-        )
-        invis_ax.shift(align_ax_origins(ax, invis_ax))
-        return ax, invis_ax
+
+class MultiPacking(Scene):
+    def construct(self):
+        greedy_animator = GreedyPackingAnimator()
+        greedy_ax, greedy_base_rect = greedy_animator.animate(packing_type='GREEDYBETTER')
+        tile_animator = TilePackingAnimator()
+        tile_ax, tile_base_rect = tile_animator.animate(offset=RIGHT * 6, packing_type='GREEDYBETTER')
+        self.add(greedy_ax, greedy_base_rect, tile_ax, tile_base_rect)
+        self.play(AnimationGroup(Write(tex_greedy.next_to(greedy_ax, UP)), Write(tex_tile.next_to(tile_ax, UP))))
+        animation_pairs = zip(greedy_animator.animations, tile_animator.animations)
+        for pair in animation_pairs:
+            self.play(AnimationGroup(*pair))

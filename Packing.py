@@ -224,10 +224,25 @@ class Packing:
 
     def get_points_creations(self):
         points = []
-        for point in self.base_rect.pointsSet:
+        for point in self.ordered_points:
             point.render(self._ax)
             points.append(Create(point.mobject))
         return points
+
+    def get_rectangle_transforms(self):
+        rectangle_transforms = []
+        for idx, packed_rectangle in enumerate(self.greedy_rectangles):
+            packed_rectangle.render_transform_base()
+            rectangle_transforms.append(Transform(packed_rectangle.transform_base, packed_rectangle.mobject))
+        return rectangle_transforms
+
+    def get_possible_points_fades(self):
+        possible_points_fadein = []
+        possible_points_fadeout = []
+        for idx, packed_rectangle in enumerate(self.greedy_rectangles):
+            possible_points_fadein.append(FadeIn(self.greedy_possible_points_polygons[idx].mobject))
+            possible_points_fadeout.append(FadeOut(self.greedy_possible_points_polygons[idx].mobject))
+        return possible_points_fadein, possible_points_fadeout
 
     def _get_greedy_packing(self, ax, scaling):
         rectangles = []
@@ -251,6 +266,7 @@ class Packing:
         rectangles = []
         possible_points_polygons = []
         tiling = Tiling()
+        packing = Tiling()
         for point in self.ordered_points:
             total_interesting_rectangle = PackedRectangle(point, MyPoint(1, 1)).render(ax, scaling)
             tile = Difference(total_interesting_rectangle.mobject, tiling.mobject)
@@ -259,10 +275,11 @@ class Packing:
                 total_interesting_rectangle.start, tile_points)
             packed_rectangle = PackedRectangle(point, maximal_rect_target).render(ax, scaling)
             tiling.union(tile)
+            packing.union(packed_rectangle.mobject)
 
             rectangles.append(packed_rectangle)
             possible_points_polygons.append(possible_points_polygon.render(ax, scaling))
 
         unpacked_space = Difference(PackedRectangle(MyPoint(0, 0), MyPoint(1, 1)).render(ax, scaling).mobject,
-                                    tiling.mobject, color=RED, fill_opacity=0.6)
+                                    packing.mobject, color=RED, fill_opacity=0.6)
         return rectangles, possible_points_polygons, unpacked_space

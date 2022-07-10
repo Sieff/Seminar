@@ -30,6 +30,7 @@ class BaseRectangle:
         self.pointsSet = {MyPoint(0, 0)}
         self.mobject = Rectangle(WHITE, width, height)
         self._init_points(init_points_type, num_points, points)
+        self.label = Tex('$U$').next_to(self.mobject, UP + RIGHT, buff=0.1)
 
     def _init_points(self, type, num_points, points):
         if type == 'RANDOM':
@@ -58,6 +59,12 @@ class BaseRectangle:
             self.add_point(0.7, 0.75)
             self.add_point(0.35, 0.65)
             self.add_point(0.8, 0.2)
+        elif type == 'INTRO':
+            self.add_point(0.2, 0.3)
+            self.add_point(0.5, 0.2)
+            self.add_point(0.4, 0.6)
+            self.add_point(0.8, 0.4)
+            self.add_point(0.7, 0.9)
 
     def add_point(self, x, y):
         if 1 >= x >= 0 and 1 >= y >= 0:
@@ -67,13 +74,14 @@ class BaseRectangle:
         self.mobject.scale(scaling)
         self.mobject.move_to(ax.c2p(0, 0, 0))
         self.mobject.shift(UP * scaling * (self.height / 2), RIGHT * scaling * (self.width / 2))
+        self.label.next_to(self.mobject, UP + RIGHT, buff=0.1)
 
 
 class MyPoint:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.mobject = Dot(radius=0.05)
+        self.mobject = Dot(radius=0.05, color=BLUE)
 
     def construct(self, x, y):
         self.__init__(x, y)
@@ -90,9 +98,10 @@ class MyPoint:
 
     def __eq__(self, other):
         quantizer = '1.00000'
-        return Decimal(str(self.x)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.x)).quantize(
+        margin = 0.000001
+        return Decimal(str(self.x + margin)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.x + margin)).quantize(
             Decimal(quantizer), rounding=ROUND_DOWN) and \
-               Decimal(str(self.y)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.y)).quantize(
+               Decimal(str(self.y + margin)).quantize(Decimal(quantizer), rounding=ROUND_DOWN) == Decimal(str(other.y + margin)).quantize(
             Decimal(quantizer), rounding=ROUND_DOWN)
 
     def __hash__(self):
@@ -162,7 +171,8 @@ class PackedRectangle:
         self.end = end
         self.width = end.x - start.x
         self.height = end.y - start.y
-        self.mobject = Rectangle(BLUE, self.height, self.width)
+        self.mobject = Rectangle(BLUE, self.height, self.width, fill_opacity= 0.2)
+        self.transform_base = Rectangle(BLUE, 0, 0).move_to(start.mobject)
 
     def construct(self, start, end):
         self.__init__(start, end)
@@ -172,6 +182,9 @@ class PackedRectangle:
         self.mobject.move_to(ax.c2p(self.start.x, self.start.y))
         self.mobject.shift(UP * scaling / 2 * (self.height / 2), RIGHT * scaling / 2 * (self.width / 2))
         return self
+
+    def render_transform_base(self):
+        self.transform_base.move_to(self.start.mobject)
 
 
 class PossiblePolygon:

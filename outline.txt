@@ -1,0 +1,47 @@
+Problem vorstellen
+	Anim:	
+		Start with unit square
+		Add Points
+		Draw a packing
+	Folien:
+		Conjecture
+		Target
+Construction of packings
+	Folien:
+		Ordering
+		Greedy Strategy
+	Anim:
+		Dominance order
+		Rectangle Definition
+		Tiling
+		Tilepacking
+		Lemma: Greedy better than Tilepacking
+		Proof
+		Remark: Will use tilepacking because of its properties, but greedy will be strictly better and is more 'easy' to execute
+Analysis of Tilepacking
+	Folien:
+		Define phi as worst case performance
+		Define beta, beta tiles, F(beta, lambda)
+Properties of a beta tile
+	Anim:
+		Notation for beta tiles
+		Lemma: Upper bound for area of beta tile
+		proof
+		Sectors and tips (+ main body + notations)
+		Lemma: Width of tips is at least the width of main body, thus total width is more than twice the main bodys width (same for vertical variant)
+		Proof
+		Tall and wide Tiles
+Upper bound on the total area of beta tiles
+	Anim:
+		Lemma: The triangle do not contain any points from S
+		Proof
+		Lemma: Every trapezoid lies in a specific polygon
+		proof
+		Bound for area of wide for pairwise disjoint trapezoids
+		The general case for overlappings
+		Lemma: For overlapping trapezoids, the lower one is significantly larger
+		Charging scheme
+		Lemma: Bound for total charge
+		proof
+		Bringing it all together
+		
