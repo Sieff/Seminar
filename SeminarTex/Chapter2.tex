@@ -1,0 +1,66 @@
+\section{Construction of packings}
+\begin{frame}{Ordering of points}
+	For each point $s \in S$ denote with $x(s)$ and $y(s)$ the coordinates of point s.
+	\begin{equation*}
+		x(s_i) + y(s_i) \geq x(s_j) + y(s_j)
+	\end{equation*}
+	for $1 \leq i < j \leq n$.
+\end{frame}
+
+{ % Sweeping line animation
+    \setbeamertemplate{navigation symbols}{}
+    \begin{frame}<article:0>[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \node[at=(current page.center)] {
+                \animategraphics[autoplay,width=\paperwidth]{30}{../media/images/scenes/SweepingLine}{0000}{0277}
+            };
+        \end{tikzpicture}
+     \end{frame}
+}
+
+{ % Greedy packing animation
+    \setbeamertemplate{navigation symbols}{}
+    \begin{frame}<article:0>[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \node[at=(current page.center)] {
+                \animategraphics[autoplay,width=\paperwidth]{30}{../media/images/scenes/GreedyPacking}{0000}{0907}
+            };
+        \end{tikzpicture}
+     \end{frame}
+}
+
+% Dominance order animation + rectangle definition
+\begin{frame}{Dominance order}
+	For two points, $p = (x_p, y_p)$ and $q = (x_q, y_q)$, we say that $p \preceq q$ (q dominates p) if
+	\begin{equation*}
+		x_p \leq x_q \text{ and } y_p \leq y_q:
+	\end{equation*}
+
+	With this denition, an axis-aligned rectangle with lower left corner $c_1$ and upper right corner $c_2$ can be written as ${p \in \mathbb{R}^2 : c_1 \preceq p \preceq c_2}$.
+\end{frame}
+
+{ % Tile packing animation
+    \setbeamertemplate{navigation symbols}{}
+    \begin{frame}<article:0>[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \node[at=(current page.center)] {
+                \animategraphics[autoplay,width=\paperwidth]{30}{../media/images/scenes/TilePacking}{0000}{0907}
+            };
+        \end{tikzpicture}
+     \end{frame}
+}
+
+\begin{frame}{Greedy vs Tiling}
+	Lemma: For each point $s_i \in S$, GreedyPacking chooses a rectangle whose area is at least as large as the area of the rectangle chosen by TilePacking.
+\end{frame}
+
+{ % Proof animation
+    \setbeamertemplate{navigation symbols}{}
+    \begin{frame}<article:0>[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \node[at=(current page.center)] {
+                \animategraphics[autoplay,width=\paperwidth]{30}{../media/images/scenes/MultiPacking}{0000}{0694}
+            };
+        \end{tikzpicture}
+     \end{frame}
+}
