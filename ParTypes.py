@@ -58,7 +58,7 @@ class BaseRectangle:
         elif type == 'GREEDYBETTER':
             self.add_point(0.7, 0.75)
             self.add_point(0.35, 0.65)
-            self.add_point(0.8, 0.2)
+            self.add_point(0.8, 0.1)
         elif type == 'INTRO':
             self.add_point(0.2, 0.3)
             self.add_point(0.5, 0.2)

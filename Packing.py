@@ -229,9 +229,16 @@ class Packing:
             points.append(Create(point.mobject))
         return points
 
-    def get_rectangle_transforms(self):
+    def get_greedy_rectangle_transforms(self):
         rectangle_transforms = []
         for idx, packed_rectangle in enumerate(self.greedy_rectangles):
+            packed_rectangle.render_transform_base()
+            rectangle_transforms.append(Transform(packed_rectangle.transform_base, packed_rectangle.mobject))
+        return rectangle_transforms
+
+    def get_tiling_rectangle_transforms(self):
+        rectangle_transforms = []
+        for idx, packed_rectangle in enumerate(self.tiling_rectangles):
             packed_rectangle.render_transform_base()
             rectangle_transforms.append(Transform(packed_rectangle.transform_base, packed_rectangle.mobject))
         return rectangle_transforms

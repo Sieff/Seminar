@@ -74,7 +74,7 @@ class Introduction(MyScene):
         self.play(AnimationGroup(FadeOut(packing.base_rect.label),
                                  LaggedStart(*packing.get_points_creations()),
                                  IntroTex.mobject_writes[1]))
-        self.play(AnimationGroup(*packing.get_rectangle_transforms(),
+        self.play(AnimationGroup(*packing.get_greedy_rectangle_transforms(),
                                  IntroTex.mobject_writes[2]))
 
 
@@ -86,7 +86,7 @@ class DiagonalPacking(MyScene):
         packing = Packing(BaseRectangle(1, 1, 'DIAGONAL', num_points=10), ax, scaling)
         self.add(packing.base_rect.mobject)
         self.play(LaggedStart(*packing.get_points_creations()))
-        self.play(LaggedStart(*packing.get_rectangle_transforms()))
+        self.play(LaggedStart(*packing.get_greedy_rectangle_transforms()))
 
 
 class SweepingLine(MyScene):
@@ -106,7 +106,7 @@ class SweepingLine(MyScene):
 
 
 class GreedyPackingAnimator(Animator):
-    def animate(self, offset=ORIGIN, packing_type='INTRO'):
+    def animate(self, offset=ORIGIN, packing_type='GREEDYBETTER'):
         scaling = 5
         ax, invis_ax = init_axes(scaling, offset)
         packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
@@ -117,10 +117,19 @@ class GreedyPackingAnimator(Animator):
         for idx, packed_rectangle in enumerate(packing.greedy_rectangles):
             point = packing.ordered_points[idx]
             new_scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(point), color=ORANGE)
-            self.play(Transform(scan_line, new_scan_line))
-            self.play(FadeIn(packing.greedy_possible_points_polygons[idx].mobject))
-            self.play(Transform(point.mobject, packed_rectangle.mobject))
-            self.play(FadeOut(packing.greedy_possible_points_polygons[idx].mobject))
+            if idx > 0:
+                self.play(AnimationGroup(FadeOut(packing.greedy_possible_points_polygons[idx - 1].mobject),
+                                         LaggedStart(Transform(scan_line, new_scan_line),
+                                                     FadeIn(packing.greedy_possible_points_polygons[idx].mobject),
+                                                     lag_ratio=0.3)))
+            else:
+                self.play(LaggedStart(Transform(scan_line, new_scan_line),
+                                      FadeIn(packing.greedy_possible_points_polygons[idx].mobject),
+                                      lag_ratio=0.3))
+
+            self.play(packing.get_greedy_rectangle_transforms()[idx])
+            if idx == len(packing.greedy_rectangles) - 1:
+                self.play(FadeOut(packing.greedy_possible_points_polygons[idx].mobject))
         self.play(FadeOut(scan_line))
         self.play(FadeIn(packing.greedy_unpacked_space))
         self.play(FadeOut(packing.greedy_unpacked_space))
@@ -139,7 +148,7 @@ class GreedyPacking(Scene):
 
 
 class TilePackingAnimator(Animator):
-    def animate(self, offset=ORIGIN, packing_type='INTRO'):
+    def animate(self, offset=ORIGIN, packing_type='GREEDYBETTER'):
         scaling = 5
         ax, invis_ax = init_axes(scaling, offset)
         packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
@@ -150,10 +159,20 @@ class TilePackingAnimator(Animator):
         for idx, packed_rectangle in enumerate(packing.tiling_rectangles):
             point = packing.ordered_points[idx]
             new_scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(point), color=ORANGE)
-            self.play(Transform(scan_line, new_scan_line))
-            self.play(FadeIn(packing.tiling_possible_points_polygons[idx].mobject))
-            self.play(Transform(point.mobject, packed_rectangle.mobject))
-            self.play(FadeOut(packing.tiling_possible_points_polygons[idx].mobject))
+            if idx > 0:
+                self.play(AnimationGroup(FadeOut(packing.tiling_possible_points_polygons[idx - 1].mobject),
+                                         LaggedStart(Transform(scan_line, new_scan_line),
+                                                     FadeIn(packing.tiling_possible_points_polygons[idx].mobject),
+                                                     lag_ratio=0.3)))
+            else:
+                self.play(LaggedStart(Transform(scan_line, new_scan_line),
+                                      FadeIn(packing.tiling_possible_points_polygons[idx].mobject),
+                                      lag_ratio=0.3))
+
+            self.play(packing.get_tiling_rectangle_transforms()[idx])
+            if idx == len(packing.tiling_rectangles) - 1:
+                self.play(FadeOut(packing.tiling_possible_points_polygons[idx].mobject))
+
         self.play(FadeOut(scan_line))
         self.play(FadeIn(packing.tiling_unpacked_space))
         self.play(FadeOut(packing.tiling_unpacked_space))
