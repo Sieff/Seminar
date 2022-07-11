@@ -1,4 +1,4 @@
-from LatexMobjects.Construction import tex_greedy, tex_tile
+from LatexMobjects.Construction import tex_greedy, tex_tile, tex_greedy_explaination, tex_tiling_explaination
 from LatexMobjects.Introduction import IntroTex
 from Packing import Packing
 from ParTypes import *
@@ -143,6 +143,7 @@ class GreedyPacking(Scene):
         ax, base_rect = animator.animate()
         self.add(ax)
         self.add(base_rect)
+        self.add(*tex_greedy_explaination.mobjects)
         for a in animator.animations:
             self.play(a)
 
@@ -186,6 +187,7 @@ class TilePacking(Scene):
         ax, base_rect = animator.animate()
         self.add(ax)
         self.add(base_rect)
+        self.add(*tex_tiling_explaination.mobjects)
         for a in animator.animations:
             self.play(a)
 
