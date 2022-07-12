@@ -1,0 +1,55 @@
+\section{Analysis of TilePacking}
+\begin{frame}{The Goal}
+	Getting a lower bound for the worst case performance $\rho$ of TilePacking.
+	\begin{equation*}
+		\rho \geq 0.09121
+	\end{equation*}
+	Looking at the set of rectangles $R = \{r_i:i=1,\ldots,n\}$ from a TilePacking, if
+	\begin{equation*}
+		\text{area}(r_i) \geq 0.09121 * \text{area}(t_i)
+	\end{equation*}
+	for every $i$, we would be done.
+\end{frame}
+
+\begin{frame}{The two variables}
+	$\text{area}(r_i)/\text{area}(t_i)$ may be arbitrarily small.\\
+	We will give an upper bound of the area of all tiles, where this fraction is smaller than $\frac{1}{\beta}$ with a Funcion $F(\beta, \lambda)$.
+\end{frame}
+
+\begin{frame}{$\beta$-tiles}
+	For $\beta \geq 5$, $t_i$ is a $\beta$-tile, if
+	\begin{equation*}
+		\text{area}(r_i) < \frac{1}{\beta} \text{area}(t_i)
+	\end{equation*}
+\end{frame}
+
+\begin{frame}
+	All of the non-$\beta$-tiles will cover $1 - F(\beta, \lambda)$ in area and each will result in a rectangle with
+	\begin{equation*}
+		\text{area}(r_i) \geq \frac{1}{\beta} \text{area}(t_i)
+	\end{equation*}
+	Therefor, the total area of all rectangles in $R$ is
+	\begin{equation}
+		\sum^n_{i=1}\text{area}(r_i) \geq \rho \geq \frac{1 - F(\beta, \lambda)}{\beta}
+	\end{equation}
+\end{frame}
+
+% Properties of a beta-tile
+
+\begin{frame}{Lemma}
+	Let  $\beta \geq 1$ and $t$ be a staircase polygon of height $h$ and
+width $w$. If the area of every axis-aligned rectangle contained in $t$ is less than $\text{area}(t)/\beta$, then
+	\begin{equation}
+		\text{area} < \frac{\beta}{e^{\beta - 1}} * hw
+	\end{equation}
+\end{frame}
+
+% Lemma Proof
+
+% Sectors and tips
+
+\begin{frame}{Lemma}
+	The width of the right tip of $t_i$ is at least $|a^\prime_i|$, hence $2|a_i^\prime| \leq |a_i|$. Similarly, the height of the upper tip of $t_i$ is at least $|b_i^\prime|$, hence $2|b_i^\prime| \leq |b_i|$.
+\end{frame}
+
+% Lemma proof
