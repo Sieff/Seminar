@@ -3,6 +3,7 @@ from LatexMobjects.Introduction import IntroTex
 from Packing import Packing
 from ParTypes import *
 
+scaling = 5
 
 def scan_line_y_cut(point):
     return point.y + point.x
@@ -64,7 +65,6 @@ class Animator:
 
 class Introduction(MyScene):
     def construct(self):
-        scaling = 5
         ax, invis_ax = init_axes(scaling)
         self.add(ax)
         packing = Packing(BaseRectangle(1, 1, 'INTRO', num_points=10), ax, scaling)
@@ -80,7 +80,6 @@ class Introduction(MyScene):
 
 class DiagonalPacking(MyScene):
     def construct(self):
-        scaling = 5
         ax, invis_ax = init_axes(scaling)
         self.add(ax)
         packing = Packing(BaseRectangle(1, 1, 'DIAGONAL', num_points=10), ax, scaling)
@@ -91,7 +90,6 @@ class DiagonalPacking(MyScene):
 
 class SweepingLine(MyScene):
     def construct(self):
-        scaling = 5
         ax, invis_ax = init_axes(scaling)
         self.add(ax)
         packing = Packing(BaseRectangle(1, 1, 'INTRO', num_points=10), ax, scaling)
@@ -107,7 +105,6 @@ class SweepingLine(MyScene):
 
 class GreedyPackingAnimator(Animator):
     def animate(self, offset=ORIGIN, packing_type='GREEDYBETTER'):
-        scaling = 5
         ax, invis_ax = init_axes(scaling, offset)
         packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
         self.play(LaggedStart(*packing.get_points_creations()))
@@ -150,7 +147,6 @@ class GreedyPacking(Scene):
 
 class TilePackingAnimator(Animator):
     def animate(self, offset=ORIGIN, packing_type='GREEDYBETTER'):
-        scaling = 5
         ax, invis_ax = init_axes(scaling, offset)
         packing = Packing(BaseRectangle(1, 1, packing_type, num_points=10), ax, scaling)
         self.play(LaggedStart(*packing.get_points_creations()))
@@ -178,15 +174,15 @@ class TilePackingAnimator(Animator):
         self.play(FadeIn(packing.tiling_unpacked_space))
         self.play(FadeOut(packing.tiling_unpacked_space))
         self.play(FadeIn(packing.tiling_unpacked_space))
-        return ax, packing.base_rect.mobject
+        return ax, packing
 
 
 class TilePacking(Scene):
     def construct(self):
-        animator = GreedyPackingAnimator()
-        ax, base_rect = animator.animate()
+        animator = TilePackingAnimator()
+        ax, packing = animator.animate()
         self.add(ax)
-        self.add(base_rect)
+        self.add(packing.base_rect.mobject)
         self.add(*tex_tiling_explaination.mobjects)
         for a in animator.animations:
             self.play(a)
@@ -197,9 +193,22 @@ class MultiPacking(Scene):
         greedy_animator = GreedyPackingAnimator()
         greedy_ax, greedy_base_rect = greedy_animator.animate(packing_type='GREEDYBETTER')
         tile_animator = TilePackingAnimator()
-        tile_ax, tile_base_rect = tile_animator.animate(offset=RIGHT * 6, packing_type='GREEDYBETTER')
-        self.add(greedy_ax, greedy_base_rect, tile_ax, tile_base_rect)
+        tile_ax, packing = tile_animator.animate(offset=RIGHT * 6, packing_type='GREEDYBETTER')
+        self.add(greedy_ax, greedy_base_rect, tile_ax, packing.base_rect.mobject)
         self.play(AnimationGroup(Write(tex_greedy.next_to(greedy_ax, UP)), Write(tex_tile.next_to(tile_ax, UP))))
         animation_pairs = zip(greedy_animator.animations, tile_animator.animations)
         for pair in animation_pairs:
             self.play(AnimationGroup(*pair))
+
+
+class BetaProperties(Scene):
+    def construct(self):
+        animator = TilePackingAnimator()
+        old_ax, packing = animator.animate(packing_type='BETA')
+        beta_tile = packing.tiling_possible_points_polygons[9]
+        ax, invis_ax = init_axes(scaling/10, old_ax.c2p(*beta_tile.point.to_vec2d()) + 3 * RIGHT)
+        self.add(ax)
+        self.add(old_ax)
+        self.add(packing.base_rect.mobject)
+        self.add(beta_tile.mobject)
+
