@@ -9,22 +9,29 @@ def scan_line_y_cut(point):
     return point.y + point.x
 
 
-def align_ax_origins(to_ax, from_ax):
-    target = to_ax.c2p(0, 0)
-    start = from_ax.c2p(0, 0)
-    return target - start
+def align_ax_to_point(ax, point):
+    start = ax.c2p(0, 0)
+    return point - start
 
 
-def init_axes(scaling, offset=ORIGIN):
-    ax = Axes(
-        x_range=[0, 2, 1],
-        y_range=[0, 2, 1],
-        x_length=scaling,
-        y_length=scaling,
-        axis_config={
-            "numbers_to_include": [1],
-        }
-    ).shift(LEFT * 3 + offset)
+def init_axes(scaling, offset=ORIGIN, labels=True):
+    if labels:
+        ax = Axes(
+            x_range=[0, 2, 1],
+            y_range=[0, 2, 1],
+            x_length=scaling,
+            y_length=scaling,
+            axis_config={
+                "numbers_to_include": [1],
+            }
+        ).shift(LEFT * 3 + offset)
+    else:
+        ax = Axes(
+            x_range=[0, 2, 1],
+            y_range=[0, 2, 1],
+            x_length=scaling,
+            y_length=scaling
+        ).shift(LEFT * 3 + offset)
 
     invis_ax_size = 4
     invis_ax = Axes(
@@ -33,7 +40,7 @@ def init_axes(scaling, offset=ORIGIN):
         x_length=invis_ax_size * scaling,
         y_length=invis_ax_size * scaling
     )
-    invis_ax.shift(align_ax_origins(ax, invis_ax))
+    invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0, 0)))
     return ax, invis_ax
 
 
@@ -202,13 +209,62 @@ class MultiPacking(Scene):
 
 
 class BetaProperties(Scene):
+    def plot(self, ax, threshold):
+        return ax.plot(lambda x: threshold / x, color=ORANGE, x_range=[threshold - 0.05, threshold / (threshold - 0.05), 0.01])
+
     def construct(self):
         animator = TilePackingAnimator()
         old_ax, packing = animator.animate(packing_type='BETA')
         beta_tile = packing.tiling_possible_points_polygons[9]
-        ax, invis_ax = init_axes(scaling/10, old_ax.c2p(*beta_tile.point.to_vec2d()) + 3 * RIGHT)
-        self.add(ax)
+        beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
         self.add(old_ax)
         self.add(packing.base_rect.mobject)
-        self.add(beta_tile.mobject)
+        self.play(FadeIn(beta_tile.mobject))
 
+        ax, invis_ax = init_axes(scaling, labels=False)
+        dashed_lines = VGroup(DashedLine(ax.c2p(0, 1), ax.c2p(1, 1)), DashedLine(ax.c2p(1, 0), ax.c2p(1, 1)))
+        new_beta_tile = beta_tile.mobject.animate.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
+        self.play(new_beta_tile,
+                  Transform(old_ax, ax),
+                  FadeOut(packing.base_rect.mobject),
+                  FadeIn(dashed_lines))
+
+        brace_d = Brace(beta_tile.mobject, direction=DOWN)
+        brace_d_label = Tex('$a_i$').next_to(brace_d, DOWN)
+        brace_l = Brace(beta_tile.mobject, direction=LEFT)
+        brace_l_label = Tex('$b_i$').next_to(brace_l, LEFT)
+        self.play(FadeIn(brace_l, brace_d, brace_d_label, brace_l_label))
+
+        x_label = Tex(r'$w = |a_i|$')
+        y_label = Tex(r'$h = |b_i|$')
+        ax.x_axis.add_labels({1: x_label})
+        ax.y_axis.add_labels({1: y_label})
+        self.play(LaggedStart(FadeOut(brace_l, brace_d, brace_d_label, brace_l_label),
+                              FadeIn(x_label, y_label), lag_ratio=0.2))
+        self.play(x_label.animate.become(Tex(r'$w$').move_to(x_label)),
+                  y_label.animate.become(Tex(r'$h$').move_to(y_label)))
+
+        threshold = 0.2
+        graph = self.plot(ax, threshold)
+        graph_label = Tex('f(x) = u / x', font_size=28).next_to(graph, UL)
+        graph_label.shift(RIGHT * graph_label.width)
+        graph_label.save_state()
+        graph.save_state()
+        new_graph = self.plot(ax, 0.8)
+        new_label = Tex('f(x) = u / x', font_size=28).next_to(new_graph, UL).shift(RIGHT * graph_label.width)
+        self.play(Create(graph))
+        self.play(FadeIn(graph_label))
+        self.play(Transform(graph, new_graph), Transform(graph_label, new_label))
+        self.wait()
+        self.play(Restore(graph), Restore(graph_label))
+
+        h_line = Line(ax.c2p(0.2, -.05), ax.c2p(0.2, 1), stroke_width=2)
+        x_label_2 = Tex(r'$u / h$')
+        ax.x_axis.add_labels({0.2: x_label_2})
+        self.play(FadeIn(h_line, x_label_2))
+
+        rect = PackedRectangle(MyPoint(0, 0), MyPoint(0.2, 1)).render(ax, scaling)
+        rect.mobject.stroke_width = 2
+        rect.mobject.set_opacity(0.8)
+        area = ax.get_area(graph, (0.2, 1), color=GREEN, stroke_width=2, opacity=0.8)
+        self.play(FadeIn(rect.mobject, area))
