@@ -113,6 +113,11 @@ class MyPoint:
     def __repr__(self):
         return '<MyPoint: ' + self.__str__() + '>'
 
+    def __add__(self, other):
+        return MyPoint(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return MyPoint(self.x - other.x, self.y - other.y)
 
 class MyLine:
     def __init__(self, start, end):
@@ -186,16 +191,90 @@ class PackedRectangle:
     def render_transform_base(self):
         self.transform_base.move_to(self.start.mobject)
 
+    def get_area(self):
+        return self.width * self.height
+
 
 class PossiblePolygon:
     def __init__(self, point, vertices):
         self.point = point
         self.mobject = Polygon(*vertices_as_sequence(vertices), color=GREEN, fill_color=GREEN, fill_opacity=0.4)
+        self.vertices = vertices
+        self.flipped = False
 
     def render(self, ax, scaling):
         self.mobject.scale(scaling / 4)
         self.mobject.align_to(ax.c2p(self.point.x, self.point.y), DOWN + LEFT)
         return self
+
+    def spread_vertices(self):
+        vertices = []
+        offset = self.vertices[0]
+        for v in self.vertices:
+            new_v = v - offset
+            vertices.append(MyPoint(new_v.x * 10, new_v.y * 10))
+        self.vertices = np.array(vertices)
+        self.point = self.vertices[0]
+        return self.vertices
+
+    def flip_vertices(self):
+        self.vertices = np.flip(np.append(self.vertices, self.vertices[0]))[:-1]
+        self.flipped = not self.flipped
+        return self.vertices
+
+    def coverage(self):
+        area = self.get_area()
+        max_area = 0
+        for i, v in enumerate(self.vertices):
+            if i % 2 == 0 or i < 3:
+                continue
+            rect = PackedRectangle(self.point, v)
+            if rect.get_area() > max_area:
+                max_area = rect.get_area()
+        return max_area / area
+
+    def get_area(self):
+        result = 0
+        if self.flipped:
+            self.flip_vertices()
+
+        for i, v in enumerate(self.vertices):
+            if i % 2 == 0 or i < 3:
+                continue
+            prev = self.vertices[i-1]
+            w = prev.x - v.x
+            h = v.y
+            result = result + w * h
+        return result
+
+    def get_tip(self, dir, ax, scaling, beta=5):
+        area = self.get_area() / beta
+        if dir == 'u':
+            self.flip_vertices()
+        cum_area = 0
+        tip_index = -1
+        for i, v in enumerate(self.vertices):
+            if i % 2 == 0 or i < 3:
+                continue
+            prev = self.vertices[i - 1]
+            if dir == 'r':
+                w = prev.x - v.x
+                h = v.y
+            else:
+                w = prev.y - v.y
+                h = v.x
+            cum_area = cum_area + w * h
+            if cum_area > area:
+                tip_index = i
+                break
+        if dir == 'r':
+            start = MyPoint(self.vertices[tip_index].x, 0)
+        else:
+            start = MyPoint(0, self.vertices[tip_index].y)
+        tip = PossiblePolygon(start, np.append(np.array([start]), self.vertices[1:tip_index + 1])).render(ax, scaling)
+        if dir == 'u':
+            tip.flipped = True
+        return tip
 
 
 class Tiling:

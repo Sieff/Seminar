@@ -1,5 +1,7 @@
+from LatexMobjects.BetaProperties import tex_beta_property_proof
 from LatexMobjects.Construction import tex_greedy, tex_tile, tex_greedy_explaination, tex_tiling_explaination
 from LatexMobjects.Introduction import IntroTex
+from LatexMobjects.SectionsTips import tex_sections_tips_proof, tex_sections_tips_info
 from Packing import Packing
 from ParTypes import *
 
@@ -78,9 +80,11 @@ class Introduction(MyScene):
         self.play(AnimationGroup(FadeIn(packing.base_rect.mobject),
                                  FadeIn(packing.base_rect.label),
                                  IntroTex.mobject_writes[0]))
+        self.next_section()
         self.play(AnimationGroup(FadeOut(packing.base_rect.label),
                                  LaggedStart(*packing.get_points_creations()),
                                  IntroTex.mobject_writes[1]))
+        self.next_section()
         self.play(AnimationGroup(*packing.get_greedy_rectangle_transforms(),
                                  IntroTex.mobject_writes[2]))
 
@@ -209,8 +213,8 @@ class MultiPacking(Scene):
 
 
 class BetaProperties(Scene):
-    def plot(self, ax, threshold):
-        return ax.plot(lambda x: threshold / x, color=ORANGE, x_range=[threshold - 0.05, threshold / (threshold - 0.05), 0.01])
+    def plot(self, ax, u):
+        return ax.plot(lambda x: u / x, color=ORANGE, x_range=[u / 2, 2.0, 0.01])
 
     def construct(self):
         animator = TilePackingAnimator()
@@ -220,51 +224,180 @@ class BetaProperties(Scene):
         self.add(old_ax)
         self.add(packing.base_rect.mobject)
         self.play(FadeIn(beta_tile.mobject))
+        self.next_section()
 
         ax, invis_ax = init_axes(scaling, labels=False)
-        dashed_lines = VGroup(DashedLine(ax.c2p(0, 1), ax.c2p(1, 1)), DashedLine(ax.c2p(1, 0), ax.c2p(1, 1)))
         new_beta_tile = beta_tile.mobject.animate.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
         self.play(new_beta_tile,
                   Transform(old_ax, ax),
-                  FadeOut(packing.base_rect.mobject),
-                  FadeIn(dashed_lines))
+                  FadeOut(packing.base_rect.mobject))
+        self.next_section()
 
         brace_d = Brace(beta_tile.mobject, direction=DOWN)
         brace_d_label = Tex('$a_i$').next_to(brace_d, DOWN)
         brace_l = Brace(beta_tile.mobject, direction=LEFT)
         brace_l_label = Tex('$b_i$').next_to(brace_l, LEFT)
         self.play(FadeIn(brace_l, brace_d, brace_d_label, brace_l_label))
+        self.next_section()
 
         x_label = Tex(r'$w = |a_i|$')
         y_label = Tex(r'$h = |b_i|$')
         ax.x_axis.add_labels({1: x_label})
         ax.y_axis.add_labels({1: y_label})
+        dashed_lines = VGroup(DashedLine(ax.c2p(0, 1), ax.c2p(1, 1)), DashedLine(ax.c2p(1, 0), ax.c2p(1, 1)))
         self.play(LaggedStart(FadeOut(brace_l, brace_d, brace_d_label, brace_l_label),
-                              FadeIn(x_label, y_label), lag_ratio=0.2))
+                              AnimationGroup(FadeIn(x_label, y_label),
+                                             FadeIn(dashed_lines)), lag_ratio=0.2))
+        self.next_section()
+
         self.play(x_label.animate.become(Tex(r'$w$').move_to(x_label)),
                   y_label.animate.become(Tex(r'$h$').move_to(y_label)))
+        self.next_section()
 
-        threshold = 0.2
-        graph = self.plot(ax, threshold)
+        self.play(tex_beta_property_proof.mobject_writes[0])
+        self.next_section()
+
+        u = 0.2
+        graph = self.plot(ax, u)
         graph_label = Tex('f(x) = u / x', font_size=28).next_to(graph, UL)
         graph_label.shift(RIGHT * graph_label.width)
         graph_label.save_state()
         graph.save_state()
-        new_graph = self.plot(ax, 0.8)
-        new_label = Tex('f(x) = u / x', font_size=28).next_to(new_graph, UL).shift(RIGHT * graph_label.width)
+        # u = 1
+        # new_graph = self.plot(ax, u)
+        # new_label = Tex('f(x) = u / x', font_size=28).next_to(new_graph, UL).shift(RIGHT * graph_label.width)
         self.play(Create(graph))
         self.play(FadeIn(graph_label))
-        self.play(Transform(graph, new_graph), Transform(graph_label, new_label))
-        self.wait()
-        self.play(Restore(graph), Restore(graph_label))
+        # self.wait()
+        # self.play(Transform(graph, new_graph), Transform(graph_label, new_label))
+        # self.wait()
+        # self.play(Restore(graph), Restore(graph_label))
+        self.next_section()
 
         h_line = Line(ax.c2p(0.2, -.05), ax.c2p(0.2, 1), stroke_width=2)
         x_label_2 = Tex(r'$u / h$')
         ax.x_axis.add_labels({0.2: x_label_2})
         self.play(FadeIn(h_line, x_label_2))
+        self.next_section()
 
         rect = PackedRectangle(MyPoint(0, 0), MyPoint(0.2, 1)).render(ax, scaling)
         rect.mobject.stroke_width = 2
         rect.mobject.set_opacity(0.8)
         area = ax.get_area(graph, (0.2, 1), color=GREEN, stroke_width=2, opacity=0.8)
         self.play(FadeIn(rect.mobject, area))
+
+        for idx, write in enumerate(tex_beta_property_proof.mobject_writes):
+            if idx == 0:
+                continue
+            self.next_section()
+            if idx == 1:
+                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8).next_to(tex_beta_property_proof.mobjects[idx], LEFT)))
+            if idx == 2:
+                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=GREEN, stroke_width=2, fill_opacity=0.8).next_to(tex_beta_property_proof.mobjects[idx], LEFT)))
+
+            self.play(write)
+
+class SectionsTips(Scene):
+    def construct(self):
+        animator = TilePackingAnimator()
+        old_ax, packing = animator.animate(packing_type='BETA')
+        ax, invis_ax = init_axes(scaling, labels=False)
+        beta_tile = packing.tiling_possible_points_polygons[9]
+        beta_tile.mobject.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
+        beta_tile.spread_vertices()
+        beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
+        dashed_lines = VGroup(DashedLine(ax.c2p(0, 1), ax.c2p(1, 1)), DashedLine(ax.c2p(1, 0), ax.c2p(1, 1)))
+        self.add(ax)
+        self.add(beta_tile.mobject)
+        self.add(dashed_lines)
+
+        h_lines = []
+        h_lines_create = []
+        beta_tile.flip_vertices()
+        for idx, v in enumerate(beta_tile.vertices[3: -1]):
+            h_lines.append(Line(ax.c2p(0, v.y), ax.c2p(v.x, v.y), stroke_width=2))
+            h_lines_create.append(Create(h_lines[idx]))
+        self.play(LaggedStart(*h_lines_create))
+        self.next_section()
+        self.play(FadeOut(*h_lines))
+        v_lines = []
+        v_lines_create = []
+        beta_tile.flip_vertices()
+        for idx, v in enumerate(beta_tile.vertices[3: -1]):
+            v_lines.append(Line(ax.c2p(v.x, 0), ax.c2p(v.x, v.y), stroke_width=2))
+            v_lines_create.append(Create(v_lines[idx]))
+        self.play(LaggedStart(*v_lines_create))
+        self.next_section()
+
+        right_tip = beta_tile.get_tip('r', ax, scaling)
+        upper_tip = beta_tile.get_tip('u', ax, scaling)
+        right_tip.mobject.set_color(BLUE)
+        upper_tip.mobject.set_color(BLUE)
+        main_body = Difference(Difference(beta_tile.mobject, right_tip.mobject), upper_tip.mobject)
+        self.play(Create(right_tip.mobject))
+        self.play(Create(upper_tip.mobject))
+
+        r_label = Tex('right tip', font_size=28).next_to(right_tip.mobject, RIGHT)
+        u_label = Tex('upper tip', font_size=28).next_to(upper_tip.mobject, UP).shift(RIGHT * 0.4)
+        m_label = Tex(r'main body', font_size=28).next_to(main_body, RIGHT + UP, buff=-0.2)
+        self.play(FadeIn(r_label, u_label, m_label))
+        self.next_section()
+
+        tiny_rect1 = Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8)
+        tiny_rect2 = Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8)
+        self.play(AnimationGroup(FadeIn(tiny_rect1.next_to(tex_sections_tips_info.mobjects[0], LEFT)),
+                                 tex_sections_tips_info.mobject_writes[0],
+                                 FadeIn(tiny_rect2.next_to(tex_sections_tips_info.mobjects[1], LEFT)),
+                                 tex_sections_tips_info.mobject_writes[1]))
+        self.next_section()
+
+        m_prime = Tex(r'$t_i^\prime$', font_size=28).move_to(main_body).shift((DOWN + LEFT) * 0.1)
+        a_brace = Brace(main_body, DOWN)
+        b_brace = Brace(main_body, LEFT)
+        a_prime = Tex(r'$a_i^\prime$', font_size=28).next_to(a_brace, DOWN)
+        b_prime = Tex(r'$b_i^\prime$', font_size=28).next_to(b_brace, LEFT)
+        self.play(LaggedStart(FadeOut(*v_lines),
+                              FadeIn(a_brace, b_brace, a_prime, b_prime, m_prime), lag_ratio=0.3))
+        self.next_section()
+
+        self.remove(a_brace, b_brace, a_prime, b_prime, m_prime, upper_tip.mobject, right_tip.mobject, r_label,
+                    u_label, m_label, *tex_sections_tips_info.mobjects, tiny_rect1, tiny_rect2)
+        self.wait()
+        self.next_section()
+
+        if beta_tile.flipped:
+            beta_tile.flip_vertices()
+        rect = PackedRectangle(beta_tile.point, beta_tile.vertices[8]).render(ax, scaling)
+        right_tip_bounding_rect = PackedRectangle(right_tip.point,
+                                                  MyPoint(right_tip.vertices[1].x,
+                                                          right_tip.vertices[-1].y)).render(ax, scaling)
+        rect.mobject.set_color(RED)
+        right_tip_bounding_rect.mobject.set_color(BLUE)
+        self.play(FadeIn(right_tip.mobject))
+        self.next_section()
+
+        self.play(AnimationGroup(FadeIn(rect.mobject),
+                                 ReplacementTransform(right_tip.mobject, right_tip_bounding_rect.mobject)))
+        self.next_section()
+
+        a_prime_abs = Tex(r'$|a_i^\prime|$', font_size=28).next_to(a_brace, DOWN)
+        self.play(AnimationGroup(FadeIn(Rectangle(width=0.2, height=0.2, color=RED, stroke_width=2, fill_opacity=0.8)
+                                        .next_to(tex_sections_tips_proof.mobjects[0], LEFT),
+                                        a_prime_abs,
+                                        a_brace),
+                                 tex_sections_tips_proof.mobject_writes[0]))
+        self.next_section()
+
+        r_brace = Brace(right_tip_bounding_rect.mobject, DOWN)
+        r_brace_label = Tex(r'$|a_i| - |a_i^\prime|$', font_size=28).next_to(r_brace, DOWN)
+        self.play(AnimationGroup(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8)
+                                        .next_to(tex_sections_tips_proof.mobjects[1], LEFT),
+                                        r_brace,
+                                        r_brace_label),
+                                 tex_sections_tips_proof.mobject_writes[1]))
+        self.next_section()
+
+        self.play(tex_sections_tips_proof.mobject_writes[2])
+        self.next_section()
+
+        self.play(tex_sections_tips_proof.mobject_writes[3])
