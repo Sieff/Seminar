@@ -55,6 +55,20 @@ class BaseRectangle:
             self.add_point(0.547, 0.519)
             self.add_point(0.559, 0.517)
             self.add_point(0.583, 0.513)
+        elif type == 'WIDE':
+            self.add_point(0.5, 0.5)
+            self.add_point(0.5, 0.6)
+            self.add_point(0.7, 0.5)
+            self.add_point(0.513, 0.591)
+            self.add_point(0.516, 0.565)
+            self.add_point(0.519, 0.545)
+            self.add_point(0.531, 0.526)
+            self.add_point(0.547, 0.519)
+            self.add_point(0.559, 0.517)
+            self.add_point(0.583, 0.513)
+            self.add_point(0.68, 0.504)
+            self.add_point(0.63, 0.508)
+            self.add_point(0.7, 0.502)
         elif type == 'GREEDYBETTER':
             self.add_point(0.7, 0.75)
             self.add_point(0.35, 0.65)
@@ -93,6 +107,9 @@ class MyPoint:
     def to_vec2d(self):
         return np.array([self.x, self.y])
 
+    def as_coordinates(self):
+        return [self.x, self.y, 0]
+
     def to_vec3d(self):
         return np.array([self.x * 2, self.y * 2, 0])
 
@@ -123,9 +140,11 @@ class MyLine:
     def __init__(self, start, end):
         self.start = start
         self.end = end
+        self.mobject = Dot()
 
-    def construct(self, start, end):
-        self.__init__(start, end)
+    def render(self, ax):
+        self.mobject = Line(ax.c2p(*self.start.to_vec2d()), ax.c2p(*self.end.to_vec2d()))
+        return self
 
     def length(self):
         return math.sqrt(np.sum(self.to_vec2d() ** 2))
@@ -201,18 +220,19 @@ class PossiblePolygon:
         self.mobject = Polygon(*vertices_as_sequence(vertices), color=GREEN, fill_color=GREEN, fill_opacity=0.4)
         self.vertices = vertices
         self.flipped = False
+        self.triangle = Triangle()
 
     def render(self, ax, scaling):
         self.mobject.scale(scaling / 4)
         self.mobject.align_to(ax.c2p(self.point.x, self.point.y), DOWN + LEFT)
         return self
 
-    def spread_vertices(self):
+    def spread_vertices(self, scale):
         vertices = []
         offset = self.vertices[0]
         for v in self.vertices:
             new_v = v - offset
-            vertices.append(MyPoint(new_v.x * 10, new_v.y * 10))
+            vertices.append(MyPoint(new_v.x * scale, new_v.y * scale))
         self.vertices = np.array(vertices)
         self.point = self.vertices[0]
         return self.vertices
@@ -275,6 +295,61 @@ class PossiblePolygon:
         if dir == 'u':
             tip.flipped = True
         return tip
+
+
+class Triangle:
+    def __init__(self):
+        self.vertices = [MyPoint(0, 0), MyPoint(1, 0), MyPoint(1, -1)]
+        self.points = vertices_as_sequence(self.vertices)
+        self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.2)
+        self.trapezoid = Dot()
+
+    def render(self, ax):
+        new_points = []
+        for v in self.vertices:
+            new_points.append(ax.c2p(*v.to_vec2d()))
+        self.points = new_points
+        self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.2).align_to(ax.c2p(0), UL)
+
+    def get_trapezoid(self, _lambda, ai, ax):
+        self.trapezoid = Trapezoid(_lambda, ai).render(ax)
+        return self.trapezoid
+
+
+class Trapezoid:
+    def __init__(self, _lambda, ai):
+        vertices = [MyPoint(0, 0), MyPoint(ai, 0), MyPoint(ai, -(ai * _lambda)), MyPoint((ai * _lambda), -(ai * _lambda))]
+        self.vertices = vertices
+        self.points = []
+        self.mobject = Dot()
+
+    def render(self, ax):
+        points = []
+        for v in self.vertices:
+            points.append(ax.c2p(*v.to_vec2d()))
+        self.points = points
+        self.mobject = Polygon(*points, color=RED, fill_opacity=0.2).align_to(ax.c2p(0), UL)
+        return self
+
+    def get_l_d(self, ax):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*MyPoint(0, self.vertices[3].y).as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DL).shift(DOWN * 0.2)
+        label = Tex(r'$\lambda |a_i^\prime|$', font_size=28).next_to(arr, DOWN, buff=0.08)
+        l_divider = Line(ax.c2p(0), ax.c2p(*MyPoint(0, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
+        r_divider = Line(ax.c2p(*self.vertices[3].to_vec2d()), ax.c2p(*MyPoint(self.vertices[3].x, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
+        return arr, label, l_divider, r_divider
+
+    def get_r_d(self, ax):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*self.vertices[2].as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DR).shift(DOWN * 0.2)
+        label = Tex(r'$(1-\lambda) |a_i^\prime|$', font_size=28).next_to(arr, DOWN, buff=0.08).shift(RIGHT * 0.1)
+        l_divider = Line(ax.c2p(*self.vertices[3].to_vec2d()), ax.c2p(*MyPoint(self.vertices[3].x, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
+        r_divider = Line(ax.c2p(*self.vertices[2].to_vec2d()), ax.c2p(*MyPoint(self.vertices[2].x, self.vertices[2].y - 0.05).to_vec2d()), stroke_width=1)
+        return arr, label, l_divider, r_divider
+
+    def get_r(self, ax):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[2].as_coordinates()), end=ax.c2p(*self.vertices[1].as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).next_to(self.mobject, RIGHT, buff=0.08)
+        label = Tex(r'$\lambda |a_i^\prime|$', font_size=28).next_to(arr, RIGHT, buff=0.1)
+        divider = Line(ax.c2p(*self.vertices[2].to_vec2d()), ax.c2p(*MyPoint(self.vertices[2].x + 0.05, self.vertices[3].y).to_vec2d()), stroke_width=1)
+        return arr, label, divider
 
 
 class Tiling:

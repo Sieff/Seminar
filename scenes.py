@@ -16,8 +16,8 @@ def align_ax_to_point(ax, point):
     return point - start
 
 
-def init_axes(scaling, offset=ORIGIN, labels=True):
-    if labels:
+def init_axes(scaling, offset=ORIGIN, labels=True, tips=True):
+    if labels and tips:
         ax = Axes(
             x_range=[0, 2, 1],
             y_range=[0, 2, 1],
@@ -27,20 +27,46 @@ def init_axes(scaling, offset=ORIGIN, labels=True):
                 "numbers_to_include": [1],
             }
         ).shift(LEFT * 3 + offset)
-    else:
+    elif not labels and tips:
         ax = Axes(
             x_range=[0, 2, 1],
             y_range=[0, 2, 1],
             x_length=scaling,
             y_length=scaling
         ).shift(LEFT * 3 + offset)
+    elif labels and not tips:
+        ax = Axes(
+            x_range=[0, 1, 1],
+            y_range=[0, 1, 1],
+            x_length=scaling,
+            y_length=scaling,
+            tips=False,
+            axis_config={
+                "numbers_to_include": [1],
+            }
+        ).shift(LEFT * 3 + offset)
+    else:
+        ax = Axes(
+            x_range=[0, 1, 1],
+            y_range=[0, 1, 1],
+            tips=False,
+            x_length=scaling,
+            y_length=scaling
+        ).shift(LEFT * 3 + offset)
 
     invis_ax_size = 4
+    if not tips:
+        local_scaling = scaling * 2
+    else:
+        local_scaling = scaling
     invis_ax = Axes(
         x_range=[-invis_ax_size, invis_ax_size, 1],
         y_range=[-invis_ax_size, invis_ax_size, 1],
-        x_length=invis_ax_size * scaling,
-        y_length=invis_ax_size * scaling
+        x_length=invis_ax_size * local_scaling,
+        y_length=invis_ax_size * local_scaling,
+        axis_config={
+            "numbers_to_include": [1],
+        }
     )
     invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0, 0)))
     return ax, invis_ax
@@ -297,6 +323,7 @@ class BetaProperties(Scene):
 
             self.play(write)
 
+
 class SectionsTips(Scene):
     def construct(self):
         animator = TilePackingAnimator()
@@ -401,3 +428,79 @@ class SectionsTips(Scene):
         self.next_section()
 
         self.play(tex_sections_tips_proof.mobject_writes[3])
+
+
+class Triangles(Scene):
+    def construct(self):
+        animator = TilePackingAnimator()
+        og_ax, packing = animator.animate(packing_type='WIDE')
+        ax, invis_ax = init_axes(scaling, labels=False, tips=False)
+        ax.shift(align_ax_to_point(ax, og_ax.c2p(0)))
+        ax.shift(UP * 3)
+        invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0)))
+        beta_tile = packing.tiling_possible_points_polygons[12]
+        beta_tile.mobject.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
+        beta_tile.spread_vertices(5)
+        beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
+
+        a_label = Tex('$a_i$', font_size=28).next_to(beta_tile.mobject, DOWN, buff=0.2)
+        v_line = Line(ax.c2p(1, 2), ax.c2p(1, -5), stroke_width=2)
+        triangle = beta_tile.triangle
+        triangle.render(ax)
+        t_label = Tex(r'$\Delta_i$', font_size=28).move_to((triangle.mobject.get_center() + triangle.mobject.get_corner(UR)) / 2)
+        slope = invis_ax.plot(lambda x: -x, color=WHITE, stroke_width=2)
+        self.add(beta_tile.mobject)
+        self.play(FadeIn(a_label))
+        self.next_section()
+
+        self.play(FadeIn(slope))
+        self.next_section()
+
+        self.play(FadeIn(v_line))
+        self.next_section()
+
+        self.play(AnimationGroup(FadeOut(a_label), FadeIn(triangle.mobject, t_label)))
+        self.next_section()
+
+        self.remove(slope, v_line, t_label)
+        triangle.mobject.set_fill(opacity=0)
+        self.wait()
+        self.next_section()
+
+        point = MyPoint(0.5, -0.2)
+        self.play(Create(point.render(ax).mobject))
+        self.next_section()
+
+        scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(MyPoint(1, 0.5)), color=ORANGE)
+        self.play(FadeIn(scan_line))
+        new_scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(point), color=ORANGE)
+        self.play(Transform(scan_line, new_scan_line))
+        tile_v_line = Line(ax.c2p(*point.to_vec2d()), ax.c2p(*MyPoint(0.5, 0.07).to_vec2d()), color="#cc1400")
+        tile_h_line = Line(ax.c2p(*point.to_vec2d()), ax.c2p(*MyPoint(1.25, -0.2).to_vec2d()), color="#cc1400")
+        self.play(AnimationGroup(Create(tile_v_line, run_time=3),
+                                 Create(tile_h_line, run_time=3)))
+        self.next_section()
+
+        self.play(FadeOut(tile_v_line, tile_h_line, scan_line, point.mobject))
+
+        right_tip = beta_tile.get_tip('r', ax, scaling, beta=25).render(ax, 8)
+        ai = MyLine(right_tip.vertices[0], MyPoint(0, 0)).render(ax)
+        a_arrow = DoubleArrow(ai.mobject.get_left(), ai.mobject.get_right(), tip_length=0.1, stroke_width=2, buff=0).next_to(ai.mobject, UP, buff=0.2)
+        a_prime = Tex(r'$|a_i^\prime|$', font_size=28).next_to(a_arrow, UP, buff=0.2)
+        _lambda = 0.3
+        trapezoid = triangle.get_trapezoid(_lambda, ai.length(), ax)
+        self.play(FadeIn(right_tip.mobject, a_arrow, a_prime))
+        self.next_section()
+
+        tr_label = Tex(r'$A_i$', font_size=28).move_to(trapezoid.mobject.get_center())
+        self.play(FadeIn(trapezoid.mobject, tr_label))
+        self.next_section()
+
+        l_d_arrow, l_d_label, l_d_l_divider, l_d_r_divider = trapezoid.get_l_d(ax)
+        r_d_arrow, r_d_label, r_d_l_divider, r_d_r_divider = trapezoid.get_r_d(ax)
+        r_arrow, r_label, r_divider = trapezoid.get_r(ax)
+        self.play(FadeIn(r_arrow, r_label, r_divider))
+        self.next_section()
+
+        self.play(AnimationGroup(FadeIn(l_d_label, l_d_l_divider, l_d_arrow),
+                                 FadeIn(r_d_arrow, r_d_label, r_d_r_divider, r_d_l_divider)))
