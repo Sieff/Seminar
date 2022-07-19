@@ -189,6 +189,25 @@ class MyLine:
         return self.start.__hash__() * 1000 + self.end.__hash__()
 
 
+class MyPolygon:
+    def __init__(self, vertices):
+        self.vertices = vertices
+        self.points = []
+        self.mobject = Dot()
+
+    def render(self, ax):
+        self.calc_points(ax)
+        self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.5)
+        return self
+
+    def calc_points(self, ax):
+        points = []
+        for v in self.vertices:
+            points.append(ax.c2p(*v.as_coordinates()))
+        self.points = points
+        return points
+
+
 class PackedRectangle:
     def __init__(self, start, end):
         self.start = start

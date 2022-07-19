@@ -2,6 +2,8 @@ from LatexMobjects.BetaProperties import tex_beta_property_proof
 from LatexMobjects.Construction import tex_greedy, tex_tile, tex_greedy_explaination, tex_tiling_explaination
 from LatexMobjects.Introduction import IntroTex
 from LatexMobjects.SectionsTips import tex_sections_tips_proof, tex_sections_tips_info
+from LatexMobjects.Trapezoids import tex_trapezoids
+from LatexMobjects.Triangles import tex_triangles
 from Packing import Packing
 from ParTypes import *
 
@@ -331,7 +333,7 @@ class SectionsTips(Scene):
         ax, invis_ax = init_axes(scaling, labels=False)
         beta_tile = packing.tiling_possible_points_polygons[9]
         beta_tile.mobject.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
-        beta_tile.spread_vertices()
+        beta_tile.spread_vertices(10)
         beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
         dashed_lines = VGroup(DashedLine(ax.c2p(0, 1), ax.c2p(1, 1)), DashedLine(ax.c2p(1, 0), ax.c2p(1, 1)))
         self.add(ax)
@@ -504,3 +506,81 @@ class Triangles(Scene):
 
         self.play(AnimationGroup(FadeIn(l_d_label, l_d_l_divider, l_d_arrow),
                                  FadeIn(r_d_arrow, r_d_label, r_d_r_divider, r_d_l_divider)))
+        green_rect = PackedRectangle(trapezoid.vertices[0], trapezoid.vertices[3]).render(ax, scaling*2)
+        green_rect.mobject.set_color(GREEN)
+        blue_rect = PackedRectangle(trapezoid.vertices[1], trapezoid.vertices[3]).render(ax, scaling*2)
+        for i, w in enumerate(tex_triangles.mobject_writes):
+            self.next_section()
+            if i == 0:
+                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=GREEN, stroke_width=2, fill_opacity=0.8).next_to(tex_triangles.mobjects[i], LEFT),
+                                 green_rect.mobject))
+            if i == 1:
+                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8).next_to(tex_triangles.mobjects[i], LEFT),
+                                 blue_rect.mobject))
+            if i == 6:
+                self.play(Write(Tex(r'(5)', font_size=32).next_to(tex_triangles.mobjects[i], LEFT)))
+            self.play(w)
+
+
+class Trapezoids(Scene):
+    def construct(self):
+        ax, invis_ax = init_axes(scaling)
+        self.add(ax)
+        packing = Packing(BaseRectangle(1, 1, 'INTRO', num_points=10), ax, scaling)
+        self.add(packing.base_rect.mobject)
+        _lambda = 0.3
+        ai = MyLine(MyPoint(0, 0), MyPoint(1, 0)).render(ax)
+        ai.mobject.set_color(RED)
+        aip = ai.length() / 2
+        trapezoid = Trapezoid(_lambda, aip).render(ax)
+        pair = VGroup(ai.mobject, trapezoid.mobject)
+        pair.scale(0.5)
+        pair.align_to(ax.c2p(0.25, 0.5), UL)
+        a_label = Tex(r'$a_i$', font_size=28).next_to(ai.mobject, UP, buff=0.1)
+        A_label = Tex(r'$A_i$', font_size=28).next_to(trapezoid.mobject, DOWN, buff=0.1)
+        self.play(FadeIn(pair, a_label, A_label))
+        self.next_section()
+
+        shape = MyPolygon(np.append(trapezoid.vertices[2:], [MyPoint(0, 0), MyPoint(0, 1), MyPoint(1, 1), MyPoint(1, 0)])).render(ax)
+        shape.mobject.set_fill(opacity=0)
+        self.play(FadeIn(shape.mobject))
+        self.next_section()
+
+        tex_corner1 = Tex(r'$(\frac{\lambda}{2}, -\frac{\lambda}{2})$', font_size=28).next_to(trapezoid.vertices[3].render(ax).mobject, DL, buff=0)
+        tex_corner2 = Tex(r'$(\frac{1}{2}, -\frac{\lambda}{2})$', font_size=28).next_to(trapezoid.vertices[2].render(ax).mobject, DR, buff=0)
+        self.play(FadeIn(tex_corner1, tex_corner2, trapezoid.vertices[3].mobject, trapezoid.vertices[2].mobject))
+        self.next_section()
+
+        self.play(LaggedStart(FadeOut(a_label, A_label),
+                              pair.animate.align_to(ax.c2p(0.25, 1), UL)))
+        self.next_section()
+
+        self.play(pair.animate.align_to(ax.c2p(0.25, 0), UL))
+        self.next_section()
+        self.play(pair.animate.align_to(ax.c2p(0, 0), UL))
+        self.next_section()
+        self.play(pair.animate.scale(2).align_to(ax.c2p(0, 0), UL))
+        self.next_section()
+        self.play(pair.animate.scale(0.01).align_to(ax.c2p(1, 0), UR))
+        self.next_section()
+        self.play(pair.animate.scale(100).align_to(ax.c2p(0, 0), UL))
+        below_area = MyPolygon(np.append(trapezoid.vertices[2:], [MyPoint(0, 0), MyPoint(1, 0)])).render(ax)
+        u = MyPolygon([MyPoint(0, 0), MyPoint(0, 1), MyPoint(1, 1), MyPoint(1, 0)]).render(ax)
+        below_area.mobject.set_color(ORANGE)
+        u.mobject.set_color(GREEN)
+        for i, w in enumerate(tex_trapezoids.mobject_writes):
+            self.next_section()
+            if i == 0:
+                self.play(AnimationGroup(FadeIn(Rectangle(width=0.2, height=0.2, color=ORANGE, stroke_width=2, fill_opacity=0.8).next_to(tex_trapezoids.mobjects[i], LEFT),
+                                                below_area.mobject),
+                                         FadeOut(pair)))
+            if i == 1:
+                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=GREEN, stroke_width=2, fill_opacity=0.8).next_to(tex_trapezoids.mobjects[i], LEFT),
+                                 u.mobject))
+            if i == 2:
+                shape.mobject.set_fill(opacity=0.5)
+                self.play(AnimationGroup(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8).next_to(tex_trapezoids.mobjects[i], LEFT),
+                                                shape.mobject),
+                                         FadeOut(u.mobject, below_area.mobject)))
+            self.play(w)
+
