@@ -29,6 +29,7 @@ class BaseRectangle:
         self.width = width
         self.pointsSet = {MyPoint(0, 0)}
         self.mobject = Rectangle(WHITE, width, height)
+        self.beta_tile_index = -1
         self._init_points(init_points_type, num_points, points)
         self.label = Tex('$U$').next_to(self.mobject, UP + RIGHT, buff=0.1)
 
@@ -59,16 +60,13 @@ class BaseRectangle:
             self.add_point(0.5, 0.5)
             self.add_point(0.5, 0.6)
             self.add_point(0.7, 0.5)
-            self.add_point(0.513, 0.591)
-            self.add_point(0.516, 0.565)
-            self.add_point(0.519, 0.545)
-            self.add_point(0.531, 0.526)
-            self.add_point(0.547, 0.519)
-            self.add_point(0.559, 0.517)
-            self.add_point(0.583, 0.513)
-            self.add_point(0.68, 0.504)
-            self.add_point(0.63, 0.508)
-            self.add_point(0.7, 0.502)
+            self.add_point(0.503, 0.591)
+            self.add_point(0.505, 0.565)
+            self.add_point(0.507, 0.545)
+            self.add_point(0.51, 0.526)
+            self.add_point(0.515, 0.517)
+            self.add_point(0.52, 0.505)
+            self.add_point(0.599, 0.503)
         elif type == 'GREEDYBETTER':
             self.add_point(0.7, 0.75)
             self.add_point(0.35, 0.65)
@@ -83,6 +81,7 @@ class BaseRectangle:
     def add_point(self, x, y):
         if 1 >= x >= 0 and 1 >= y >= 0:
             self.pointsSet.add(MyPoint(x, y))
+            self.beta_tile_index = self.beta_tile_index + 1
 
     def render(self, ax, scaling):
         self.mobject.scale(scaling)
@@ -151,6 +150,10 @@ class MyLine:
 
     def to_vec2d(self):
         return self.end.to_vec2d() - self.start.to_vec2d()
+
+    def to_vec3d(self):
+        vector = self.end.to_vec2d() - self.start.to_vec2d()
+        return np.append(vector, [0])
 
     def is_orthogonal(self):
         vector_angle = angle(self.to_vec2d(), UP[:2]) % 90
@@ -317,8 +320,8 @@ class PossiblePolygon:
 
 
 class Triangle:
-    def __init__(self):
-        self.vertices = [MyPoint(0, 0), MyPoint(1, 0), MyPoint(1, -1)]
+    def __init__(self, factor=1):
+        self.vertices = [MyPoint(0, 0), MyPoint(1 * factor, 0), MyPoint(1 * factor, -1 * factor)]
         self.points = vertices_as_sequence(self.vertices)
         self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.2)
         self.trapezoid = Dot()
@@ -329,6 +332,7 @@ class Triangle:
             new_points.append(ax.c2p(*v.to_vec2d()))
         self.points = new_points
         self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.2).align_to(ax.c2p(0), UL)
+        return self
 
     def get_trapezoid(self, _lambda, ai, ax):
         self.trapezoid = Trapezoid(_lambda, ai).render(ax)
@@ -341,6 +345,7 @@ class Trapezoid:
         self.vertices = vertices
         self.points = []
         self.mobject = Dot()
+        self.label = Tex(r'$A$', font_size=28)
 
     def render(self, ax):
         points = []
@@ -348,7 +353,11 @@ class Trapezoid:
             points.append(ax.c2p(*v.to_vec2d()))
         self.points = points
         self.mobject = Polygon(*points, color=RED, fill_opacity=0.2).align_to(ax.c2p(0), UL)
+        self.label.move_to(self.mobject.get_center())
         return self
+
+    def set_label(self, index):
+        self.label = Tex(r'$A_' + str(index) + r'$', font_size=28).move_to(self.mobject.get_center())
 
     def get_l_d(self, ax):
         arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*MyPoint(0, self.vertices[3].y).as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DL).shift(DOWN * 0.2)

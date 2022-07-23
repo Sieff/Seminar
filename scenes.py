@@ -1,11 +1,14 @@
 from LatexMobjects.BetaProperties import tex_beta_property_proof
 from LatexMobjects.Construction import tex_greedy, tex_tile, tex_greedy_explaination, tex_tiling_explaination
 from LatexMobjects.Introduction import IntroTex
+from LatexMobjects.Overlapping import tex_overlapping
 from LatexMobjects.SectionsTips import tex_sections_tips_proof, tex_sections_tips_info
 from LatexMobjects.Trapezoids import tex_trapezoids
 from LatexMobjects.Triangles import tex_triangles
 from Packing import Packing
 from ParTypes import *
+
+MyRed = '#f21707'
 
 scaling = 5
 
@@ -440,7 +443,7 @@ class Triangles(Scene):
         ax.shift(align_ax_to_point(ax, og_ax.c2p(0)))
         ax.shift(UP * 3)
         invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0)))
-        beta_tile = packing.tiling_possible_points_polygons[12]
+        beta_tile = packing.tiling_possible_points_polygons[packing.base_rect.beta_tile_index]
         beta_tile.mobject.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
         beta_tile.spread_vertices(5)
         beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
@@ -469,7 +472,7 @@ class Triangles(Scene):
         self.wait()
         self.next_section()
 
-        point = MyPoint(0.5, -0.2)
+        point = MyPoint(0.4, -0.2)
         self.play(Create(point.render(ax).mobject))
         self.next_section()
 
@@ -477,7 +480,8 @@ class Triangles(Scene):
         self.play(FadeIn(scan_line))
         new_scan_line = invis_ax.plot(lambda x: -x + scan_line_y_cut(point), color=ORANGE)
         self.play(Transform(scan_line, new_scan_line))
-        tile_v_line = Line(ax.c2p(*point.to_vec2d()), ax.c2p(*MyPoint(0.5, 0.07).to_vec2d()), color="#cc1400")
+        v_line_top = Intersection(beta_tile.mobject, PackedRectangle(MyPoint(point.x - 0.1, point.y), MyPoint(point.x + 0.3, 1)).render(ax, scaling).mobject)
+        tile_v_line = Line(ax.c2p(*point.to_vec2d()), v_line_top.get_top(), color="#cc1400")
         tile_h_line = Line(ax.c2p(*point.to_vec2d()), ax.c2p(*MyPoint(1.25, -0.2).to_vec2d()), color="#cc1400")
         self.play(AnimationGroup(Create(tile_v_line, run_time=3),
                                  Create(tile_h_line, run_time=3)))
@@ -584,3 +588,99 @@ class Trapezoids(Scene):
                                          FadeOut(u.mobject, below_area.mobject)))
             self.play(w)
 
+
+class Overlapping(Scene):
+    def construct(self):
+        animator = TilePackingAnimator()
+        og_ax, packing = animator.animate(packing_type='WIDE')
+        ax, invis_ax = init_axes(scaling, labels=False, tips=False)
+        ax.shift(align_ax_to_point(ax, og_ax.c2p(0)))
+        ax.shift(UP * 3)
+        invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0)))
+        beta_tile = packing.tiling_possible_points_polygons[packing.base_rect.beta_tile_index]
+        beta_tile.mobject.scale(10).align_to(ax.c2p(0), LEFT + DOWN)
+        beta_tile.spread_vertices(5)
+        beta_tile.mobject.set_color(WHITE).set_stroke(width=2)
+
+        triangle = beta_tile.triangle
+        triangle.render(ax)
+        triangle.mobject.set_fill(opacity=0)
+
+        right_tip = beta_tile.get_tip('r', ax, scaling, beta=25).render(ax, 8)
+        aj = MyLine(right_tip.vertices[0], MyPoint(0, 0)).render(ax)
+        _lambda = 0.45
+        j_trapezoid = triangle.get_trapezoid(_lambda, aj.length(), ax)
+        j_trapezoid.mobject.set_fill(opacity=0)
+        j_trapezoid.set_label('j')
+        j_label = Tex(r'$a_j^\prime$', font_size=28, color=RED).align_to(j_trapezoid.mobject, UL).shift(DOWN * 0.1 + RIGHT * 0.4)
+        l_j = MyLine(MyPoint(-2, 0), MyPoint(10, 0)).render(invis_ax)
+        l_j_label = Tex(r'$l_j$', font_size=28).next_to(j_label, LEFT, buff=1)
+
+        self.add(l_j.mobject, l_j_label, beta_tile.mobject, triangle.mobject, right_tip.mobject, j_trapezoid.mobject, j_label)
+        self.wait()
+        self.next_section()
+
+        new_scaling = 0.65 * 0.5
+
+        triangle = Triangle(new_scaling).render(ax)
+        ai = MyLine(MyPoint(0, 0), MyPoint(new_scaling, 0)).render(ax)
+        trapezoid = triangle.get_trapezoid(_lambda, ai.length()/2, ax)
+
+        triangle.mobject.set_color(color=ORANGE).set_fill(opacity=0)
+        ai.mobject.set_color(color=ORANGE)
+        trapezoid.mobject.set_color(color=ORANGE).set_fill(opacity=0)
+
+        i_t_height = _lambda * (ai.length() / 2)
+        i_intersection = MyLine(MyPoint(_lambda * ai.length() / 4, -_lambda * ai.length() / 4), MyPoint(new_scaling, -_lambda * ai.length() / 4)).render(ax)
+        i_intersection.mobject.set_color(MyRed)
+
+        l_i = MyLine(MyPoint(-2, 0), MyPoint(10, 0)).render(invis_ax)
+        l_i.mobject.align_to(ax.c2p(0, i_t_height * 0.5), UP)
+        l_i_label = Tex(r'$l_i$', font_size=28).next_to(l_i.mobject, UP, buff=0.1).align_to(l_j_label, LEFT)
+        l_i_group = VGroup(l_i.mobject, l_i_label)
+
+        secondary = VGroup(ai.mobject, triangle.mobject, trapezoid.mobject, i_intersection.mobject).align_to(ax.c2p(0.12, i_t_height * 0.5), UL)
+        i_label = Tex(r'$a_i$', color=ORANGE, font_size=28).next_to(secondary, UP, buff=0.1)
+        group = VGroup(secondary, i_label)
+        self.play(FadeIn(group))
+        self.play(FadeIn(Line(ORIGIN, RIGHT * 0.2, color=MyRed).next_to(tex_overlapping.mobjects[0], LEFT)))
+        self.play(tex_overlapping.mobject_writes[0])
+        self.next_section()
+
+        self.play(FadeIn(l_i_group))
+        self.next_section()
+
+        self.play(FadeOut(l_i_group))
+        self.next_section()
+
+        self.play(group.animate.shift(RIGHT * 0.8))
+        dot = MyPoint(0.495, 0.015).render(ax)
+        dot.mobject.set_color(MyRed)
+        self.play(FadeIn(dot.mobject))
+        self.play(FadeOut(dot.mobject))
+        self.play(FadeIn(dot.mobject))
+        self.next_section()
+        self.play(FadeOut(dot.mobject))
+        self.play(group.animate.shift(RIGHT * 1.2))
+        self.next_section()
+
+        group = VGroup(ai.mobject, triangle.mobject, trapezoid.mobject, i_label, i_intersection.mobject)
+
+        self.play(group.animate.shift(LEFT * 2))
+        self.play(tex_overlapping.mobject_writes[1])
+        self.next_section()
+
+        new_i_intersection = MyLine(MyPoint(_lambda * ai.length() / 2, -_lambda * ai.length() / 2), MyPoint(new_scaling, -_lambda * ai.length() / 2)).render(ax)
+        new_i_intersection.mobject.set_color(MyRed).align_to(group, RIGHT).align_to(ax.c2p(0), UP)
+
+        self.play(AnimationGroup(group.animate.shift(ax.c2p(0.12, i_t_height) - group[1].get_corner(UL)),
+                                 ReplacementTransform(i_intersection.mobject, new_i_intersection.mobject)))
+
+        for i, w in enumerate(tex_overlapping.mobject_writes):
+            if i <= 1:
+                continue
+            self.next_section()
+            if i == 3:
+                self.add(MyLine(MyPoint(0, 0), MyPoint(-2, 0)).render(invis_ax).mobject)
+                self.play(FadeOut(l_j.mobject))
+            self.play(w)
