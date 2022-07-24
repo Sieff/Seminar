@@ -1,8 +1,10 @@
 from LatexMobjects.BetaProperties import tex_beta_property_proof
+from LatexMobjects.Charging import tex_charging
 from LatexMobjects.Construction import tex_greedy, tex_tile, tex_greedy_explaination, tex_tiling_explaination
 from LatexMobjects.Introduction import IntroTex
 from LatexMobjects.Overlapping import tex_overlapping
 from LatexMobjects.SectionsTips import tex_sections_tips_proof, tex_sections_tips_info
+from LatexMobjects.Stripes import tex_stripes
 from LatexMobjects.Trapezoids import tex_trapezoids
 from LatexMobjects.Triangles import tex_triangles
 from Packing import Packing
@@ -12,8 +14,9 @@ MyRed = '#f21707'
 
 scaling = 5
 
-def scan_line_y_cut(point):
-    return point.y + point.x
+
+def scan_line_y_cut(point, slope=-1):
+    return point.y + -1 * slope * point.x
 
 
 def align_ax_to_point(ax, point):
@@ -684,3 +687,278 @@ class Overlapping(Scene):
                 self.add(MyLine(MyPoint(0, 0), MyPoint(-2, 0)).render(invis_ax).mobject)
                 self.play(FadeOut(l_j.mobject))
             self.play(w)
+
+
+class Charging(Scene):
+    def construct(self):
+        ax, invis_ax = init_axes(scaling, labels=False, tips=False)
+        ax.shift(UP * 3).shift(RIGHT)
+        invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0)))
+        _lambda = 0.3
+
+        ajp_len = 0.8
+        ajp = MyLine(MyPoint(ajp_len, 0), MyPoint(0, 0)).render(ax)
+        j_trapezoid = Trapezoid(_lambda, ajp.length()).render(ax)
+        j_trapezoid.mobject.set_fill(opacity=0)
+        j_trapezoid.mobject.set_color(WHITE)
+        j_trapezoid.set_label('j')
+
+        self.add(j_trapezoid.mobject, j_trapezoid.label)
+        self.wait()
+        self.next_section()
+
+        ai = MyLine(MyPoint(0, 0), MyPoint(2 * ajp_len / (2 - _lambda), 0)).render(ax)
+        i_trapezoid = Trapezoid(_lambda, ai.length() / 2).render(ax)
+        i_trapezoid.set_label('i', ORANGE)
+        ai.mobject.set_color(color=ORANGE).shift(ax.c2p(0) - i_trapezoid.points[3])
+        i_trapezoid.mobject.set_color(color=ORANGE).set_fill(opacity=0)
+        i_trapezoid.shift(ax, ax.c2p(0) - i_trapezoid.points[3])
+        i_group = VGroup(i_trapezoid.mobject, i_trapezoid.label, ai.mobject)
+
+        self.play(FadeIn(i_group))
+        self.next_section()
+
+        u_arr, u_label, l_divider, r_divider = i_trapezoid.get_u(ax)
+        u_label.shift(UP * 0.3, RIGHT * 0.1)
+        u_group = VGroup(u_arr, u_label, l_divider, r_divider)
+        l_arr, l_label, u_divider, d_divider = i_trapezoid.get_l(ax)
+        l_group = VGroup(l_arr, l_label, u_divider, d_divider)
+
+        self.play(AnimationGroup(FadeIn(u_group), tex_charging.mobject_writes[0]))
+        self.next_section()
+        self.play(AnimationGroup(FadeIn(l_group), tex_charging.mobject_writes[1]))
+        self.next_section()
+
+        triangle_tip = MyPoint(ajp_len * _lambda / (_lambda - 1), ajp_len * _lambda / (1 - _lambda))
+        triangle = Triangle(
+            custom_vertices=[triangle_tip, j_trapezoid.vertices[0], j_trapezoid.vertices[1]]).render(ax)
+        triangle.mobject.align_to(j_trapezoid.points[1], DR)
+        self.play(FadeIn(triangle.mobject))
+        self.next_section()
+
+        similar_triangle = Triangle(custom_vertices=[i_trapezoid.vertices[0], i_trapezoid.vertices[2], i_trapezoid.vertices[3]]).render(ax)
+        similar_triangle.mobject.align_to(i_trapezoid.points[0], UL)
+        similar_triangle.mobject.set_color(RED)
+
+        r_d_arr, r_d_label, r_d_l_divider, r_d_r_divider = i_trapezoid.get_r_d(ax, label=r'$\frac{1 - \lambda}{2 - \lambda} |a_j^\prime|$')
+        r_d_label.shift(RIGHT * 0.2)
+        r_d_group = VGroup(r_d_arr, r_d_label, r_d_l_divider, r_d_r_divider)
+
+        self.play(AnimationGroup(FadeIn(similar_triangle.mobject, r_d_group),
+                                 FadeOut(i_trapezoid.label),
+                                 triangle.mobject.animate.set_fill(opacity=0)))
+
+        self.next_section()
+        self.play(FadeOut(u_group))
+
+        r_divider = Line(ax.c2p(*j_trapezoid.vertices[1].to_vec2d()), ax.c2p(*MyPoint(j_trapezoid.vertices[1].x, j_trapezoid.vertices[1].y - 0.05).to_vec2d()), stroke_width=1)
+        aj_arr = DoubleArrow(start=ax.c2p(*j_trapezoid.vertices[0].as_coordinates()), end=ax.c2p(*j_trapezoid.vertices[1].as_coordinates()), tip_length=0.1, stroke_width=2, buff=0)
+        aj_arr.next_to(j_trapezoid.points[1], DOWN, buff=0.03).align_to(r_divider, RIGHT)
+        label = Tex(r'$|a_j^\prime|$', font_size=28).next_to(aj_arr, DOWN, buff=0.08).shift(RIGHT)
+        aj_group = VGroup(aj_arr, label, r_divider)
+
+        self.play(FadeIn(aj_group))
+        self.next_section()
+
+        d_divider = Line(ax.c2p(*j_trapezoid.vertices[0].to_vec2d()), ax.c2p(*MyPoint(triangle_tip.x - 0.05, j_trapezoid.vertices[0].y).to_vec2d()), stroke_width=1)
+        u_divider = Line(ax.c2p(*triangle_tip.to_vec2d()), ax.c2p(*MyPoint(triangle_tip.x - 0.05, triangle_tip.y).to_vec2d()), stroke_width=1)
+        h_arr = DoubleArrow(start=ax.c2p(*MyPoint(triangle_tip.x - 0.05, j_trapezoid.vertices[0].y).to_vec2d()),
+                            end=ax.c2p(*MyPoint(triangle_tip.x - 0.05, triangle_tip.y).to_vec2d()),
+                            tip_length=0.1, stroke_width=2, buff=0)
+        h_arr.shift(RIGHT * 0.02)
+        h_label = Tex(r'?', font_size=28).next_to(h_arr, LEFT, buff=0.08)
+        h_group = VGroup(h_arr, h_label, d_divider, u_divider)
+        self.play(FadeIn(h_group))
+        self.next_section()
+
+        self.play(tex_charging.mobject_writes[2])
+        self.next_section()
+        self.play(tex_charging.mobject_writes[3])
+        self.next_section()
+
+        new_triangle = triangle.mobject.copy().set_color(color=RED).set_fill(opacity=0.5)
+        self.play(AnimationGroup(FadeOut(triangle.mobject),
+                                 ReplacementTransform(similar_triangle.mobject, new_triangle)))
+
+        tiny_rect = Rectangle(width=0.2, height=0.2, color=RED, stroke_width=2, fill_opacity=0.8).next_to(tex_charging.mobjects[4], LEFT).shift(RIGHT)
+        tex_charging.mobjects[4].shift(RIGHT)
+        eq_label = Tex(r'(7)', font_size=32).next_to(tiny_rect, LEFT)
+
+        for i in range(4, 8):
+            if i > 4:
+                self.next_section()
+            if i == 4:
+                self.play(FadeIn(eq_label))
+                self.play(FadeIn(tiny_rect))
+            self.play(tex_charging.mobject_writes[i])
+
+
+class Stripes(Scene):
+    def construct(self):
+        ax, invis_ax = init_axes(scaling, labels=False, tips=False)
+        ax.shift(UP * 3)
+        invis_ax.shift(align_ax_to_point(invis_ax, ax.c2p(0)))
+        _lambda = 0.3
+
+        ajp_len = 1
+        ajp = MyLine(MyPoint(ajp_len, 0), MyPoint(0, 0)).render(ax)
+        j_trapezoid = Trapezoid(_lambda, ajp.length()).render(ax)
+        j_trapezoid.mobject.set_fill(opacity=0)
+        j_trapezoid.mobject.set_color(WHITE)
+        j_trapezoid.set_label('j')
+        l_j = MyLine(MyPoint(-2, 0), MyPoint(10, 0)).render(invis_ax)
+        l_j_label = Tex(r'$l_j$', font_size=28).next_to(j_trapezoid.mobject, LEFT).align_to(l_j.mobject, UP).shift(DOWN * 0.2)
+
+        self.add(j_trapezoid.mobject, j_trapezoid.label, l_j_label, l_j.mobject)
+        self.wait()
+        self.next_section()
+
+        ai1 = MyLine(MyPoint(0, 0), MyPoint(ajp_len * 39 / 40, 0)).render(ax)
+        i1_trapezoid = Trapezoid(_lambda, ai1.length() / 2).render(ax)
+        i1_trapezoid.set_label('i_1', ORANGE)
+        shift_amount = ax.c2p(0.1, -0.03) - i1_trapezoid.points[3]
+        ai1.mobject.set_color(color=ORANGE).shift(shift_amount)
+        i1_trapezoid.mobject.set_color(color=ORANGE).set_fill(opacity=0)
+        i1_trapezoid.shift(ax, shift_amount)
+        i1_group = VGroup(i1_trapezoid.mobject, i1_trapezoid.label, ai1.mobject)
+
+        self.play(FadeIn(i1_group))
+        self.next_section()
+
+        i1_l_bound = invis_ax.plot(lambda x: -x + scan_line_y_cut(i1_trapezoid.vertices[0]), color=ORANGE)
+        i1_r_bound = invis_ax.plot(lambda x: -x + scan_line_y_cut(i1_trapezoid.vertices[1]), color=ORANGE)
+        i1_stripe_label = Tex(r'$\Xi_{i_1}$', font_size=28, color=ORANGE).next_to(i1_trapezoid.mobject, DR, buff=2).shift(DOWN * 0.3)
+        i1_bounds = VGroup(i1_r_bound, i1_l_bound, i1_stripe_label)
+
+        self.play(FadeIn(i1_bounds))
+        self.next_section()
+
+        ai2 = MyLine(MyPoint(0, 0), MyPoint(ajp_len * 7 / 16, 0)).render(ax)
+        i2_trapezoid = Trapezoid(_lambda, ai2.length() / 2).render(ax)
+        i2_trapezoid.set_label('i_2', BLUE)
+        shift_amount = ax.c2p(0.55, -0.04) - i2_trapezoid.points[3]
+        ai2.mobject.set_color(color=BLUE).shift(shift_amount)
+        i2_trapezoid.mobject.set_color(color=BLUE).set_fill(opacity=0)
+        i2_trapezoid.shift(ax, shift_amount)
+        i2_group = VGroup(i2_trapezoid.mobject, i2_trapezoid.label, ai2.mobject)
+
+        self.play(FadeIn(i2_group))
+
+        i2_l_bound = invis_ax.plot(lambda x: -x + scan_line_y_cut(i2_trapezoid.vertices[0]), color=BLUE)
+        i2_r_bound = invis_ax.plot(lambda x: -x + scan_line_y_cut(i2_trapezoid.vertices[1]), color=BLUE)
+        i2_stripe_label = Tex(r'$\Xi_{i_2}$', font_size=28, color=BLUE).next_to(i2_trapezoid.mobject, DR, buff=2).shift(DOWN * 0.3)
+        i2_bounds = VGroup(i2_r_bound, i2_l_bound, i2_stripe_label)
+
+        self.play(FadeIn(i2_bounds))
+        self.next_section()
+
+        shift_amount = ax.c2p(*(i2_trapezoid.vertices[0] + MyPoint(-0.125, 0.125)).as_coordinates()) - i2_trapezoid.points[0]
+
+        self.play(i2_group.animate.shift(shift_amount))
+        self.next_section()
+        self.play(i2_group.animate.shift(-shift_amount))
+        self.next_section()
+
+        forbidden_triangle = Triangle(custom_vertices=[i1_trapezoid.vertices[1], i1_trapezoid.vertices[2],
+                                                       MyPoint(i1_trapezoid.vertices[2].x + _lambda * (ai1.length()/2), i1_trapezoid.vertices[2].y)])
+        forbidden_triangle.render(ax)
+        forbidden_triangle.mobject.set_color(MyRed).align_to(i1_trapezoid.points[1], UL)
+
+        self.play(FadeIn(forbidden_triangle.mobject))
+        self.next_section()
+        self.play(forbidden_triangle.mobject.animate.align_to(i1_trapezoid.points[0], UL))
+        self.next_section()
+        arr, label, l_divider, r_divider = i1_trapezoid.get_l_d(ax, r'$\lambda |a_{i_1}^\prime|$')
+        forbidden_triangle.mobject.z_index = 1
+        l_divider.z_index = 0
+        self.play(FadeIn(arr, label, l_divider, r_divider))
+        self.next_section()
+        self.play(FadeOut(arr, label, l_divider, r_divider))
+        self.play(forbidden_triangle.mobject.animate.align_to(i1_trapezoid.points[1], UL))
+        self.play(tex_stripes.mobject_writes[0])
+        self.play(tex_stripes.mobject_writes[1])
+        self.next_section()
+
+        i1_triangle = Triangle(custom_vertices=[MyPoint(0, 0), MyPoint(ajp_len * 3 / 4, 0), MyPoint(ajp_len * 3 / 4, -ajp_len * 3 / 4)]).render(ax)
+        i1_triangle.mobject.align_to(i1_trapezoid.mobject, UL).set_color(ORANGE)
+        i1_triangle_label = Tex(r'$\Delta_{i_1}$', font_size=28, color=ORANGE).next_to(i1_triangle.mobject, DR, buff=0).shift(UP * 1.5 + LEFT * 0.75)
+        self.play(FadeIn(i1_triangle.mobject, i1_triangle_label))
+        self.next_section()
+
+        self.play(FadeOut(i1_triangle.mobject, i1_triangle_label, forbidden_triangle.mobject))
+
+        i1_big_group = VGroup(ai1.mobject, i1_bounds)
+        i2_big_group = VGroup(i2_group, i2_bounds)
+        temporal_shift = DOWN * 0.5 + RIGHT * 0.3
+        temporal_shift2 = RIGHT * 0.2 + UP * 0.15
+
+        self.play(AnimationGroup(i2_big_group.animate.shift(temporal_shift2),
+                                 i2_group.animate.shift(temporal_shift2),
+                                 i1_big_group.animate.shift(temporal_shift),
+                                 i1_group.animate.shift(temporal_shift)))
+        self.next_section()
+        shift_amount = ax.c2p(scan_line_y_cut(i1_trapezoid.vertices[0]), 0) - ax.c2p(*i1_trapezoid.vertices[3].as_coordinates()) + UP * 0.5 + LEFT * 0.5
+        shift_amount2 = ax.c2p(scan_line_y_cut(i2_trapezoid.vertices[0]), 0) - ax.c2p(*i2_trapezoid.vertices[3].as_coordinates()) + DOWN * 0.15 + RIGHT * 0.15
+
+        ai3 = MyLine(MyPoint(0, 0), MyPoint(ajp_len * 4 / 10, 0)).render(ax)
+        i3_trapezoid = Trapezoid(_lambda, ai3.length() / 2).render(ax)
+        i3_trapezoid.set_label('i_1', ORANGE)
+        shift_amount3 = ax.c2p(0.1, -0.01) - i3_trapezoid.points[3]
+        ai3.mobject.set_color(color=ORANGE).shift(shift_amount3)
+        i3_trapezoid.mobject.set_color(color=ORANGE).set_fill(opacity=0)
+        i3_trapezoid.shift(ax, shift_amount3)
+        i3_group = VGroup(i3_trapezoid.mobject, ai3.mobject)
+
+        self.play(FadeIn(i3_group))
+        self.next_section()
+
+        orange_group = VGroup(i1_group, i3_group)
+        self.play(orange_group.animate.shift(shift_amount))
+        self.play(i2_group.animate.shift(shift_amount2))
+        self.next_section()
+
+        shift_amount = ax.c2p(-0.027, 0.027) - ax.c2p(0)
+        self.play(i3_group.animate.shift(shift_amount))
+        self.next_section()
+
+        self.play(FadeOut(i3_group, i1_bounds, i2_group, i2_bounds))
+        self.next_section()
+
+        last_triangle = Polygon(i1_trapezoid.mobject.get_corner(UR), ai1.mobject.get_corner(UR), i1_trapezoid.mobject.get_corner(DR),
+                                color=ORANGE, fill_opacity=0.5)
+        self.play(FadeIn(last_triangle))
+        self.next_section()
+
+        l_arr = DoubleArrow(start=i1_trapezoid.mobject.get_corner(UR), end=i1_trapezoid.mobject.get_corner(DR), tip_length=0.1, stroke_width=2, buff=0).next_to(last_triangle, LEFT, buff=0.08)
+        l_label = Tex(r'$\lambda |a_{i_1}^\prime|$', font_size=28).next_to(l_arr, LEFT, buff=0.08)
+        self.play(FadeIn(l_arr, l_label))
+        self.next_section()
+
+        u_arr = DoubleArrow(start=i1_trapezoid.mobject.get_corner(UR), end=ai1.mobject.get_corner(UR), tip_length=0.1, stroke_width=2, buff=0).next_to(last_triangle, UP, buff=0.08)
+        u_label = Tex(r'$|a_{i_1}| - |a_{i_1}^\prime|$', font_size=28).next_to(u_arr, UP, buff=0.08)
+        l_divider = Line(i1_trapezoid.mobject.get_corner(UR), i1_trapezoid.mobject.get_corner(UR) + UP * 0.2, stroke_width=1)
+        r_divider = Line(ai1.mobject.get_corner(UR), ai1.mobject.get_corner(UR) + UP * 0.2, stroke_width=1)
+        self.play(FadeIn(u_arr, u_label, l_divider, r_divider))
+        self.next_section()
+
+        self.play(tex_stripes.mobject_writes[2])
+        self.next_section()
+
+        self.play(FadeOut(l_arr, l_label, u_arr, u_label, l_divider, r_divider))
+
+        self.play(Rotate(last_triangle, axis=RIGHT))
+        self.next_section()
+
+        last_group = VGroup(i1_group, last_triangle)
+        last_line = MyLine(MyPoint(ajp_len, 0), MyPoint(ajp_len, 2)).render(ax)
+
+        self.play(FadeIn(last_line.mobject))
+        self.next_section()
+
+        self.play(last_group.animate.align_to(last_line.mobject, RIGHT))
+        self.next_section()
+
+        lambda_bound = invis_ax.plot(lambda x: -x * _lambda + scan_line_y_cut(j_trapezoid.vertices[1], slope=-_lambda), color=BLUE)
+        diagonal_bound = invis_ax.plot(lambda x: -x + scan_line_y_cut(MyPoint(0, 0)), color=BLUE)
+
+        self.play(FadeIn(lambda_bound, diagonal_bound))

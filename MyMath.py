@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 
@@ -75,3 +77,8 @@ def doIntersect(p1, q1, p2, q2):
 
     # If none of the cases
     return False
+
+
+def fbl(beta, _lambda):
+    print('(1/' + str(beta) + ')*(1 - ((((3 - 3*' + str(_lambda) + ' + ' + str(_lambda) + '^2)*(8 + 3 * ' + str(_lambda) + ' - ' + str(_lambda) + '^2))/(2 * ' + str(_lambda) + ' *(1 - ' + str(_lambda) + ') *(2 - ' + str(_lambda) + ')^2)) * ((' + str(beta) + ')/(e^(' + str(beta) + '-5)))))')
+    print((1/beta)*(1 - ((((3 - 3*_lambda + _lambda**2)*(8 + 3 * _lambda - _lambda**2))/(2 * _lambda *(1 - _lambda) *(2 - _lambda)**2)) * ((beta)/(math.e**(beta-5))))))

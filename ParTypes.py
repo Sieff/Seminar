@@ -320,8 +320,11 @@ class PossiblePolygon:
 
 
 class Triangle:
-    def __init__(self, factor=1):
-        self.vertices = [MyPoint(0, 0), MyPoint(1 * factor, 0), MyPoint(1 * factor, -1 * factor)]
+    def __init__(self, factor=1, custom_vertices=None):
+        if custom_vertices is None:
+            self.vertices = [MyPoint(0, 0), MyPoint(1 * factor, 0), MyPoint(1 * factor, -1 * factor)]
+        else:
+            self.vertices = custom_vertices
         self.points = vertices_as_sequence(self.vertices)
         self.mobject = Polygon(*self.points, color=BLUE, fill_opacity=0.2)
         self.trapezoid = Dot()
@@ -356,19 +359,33 @@ class Trapezoid:
         self.label.move_to(self.mobject.get_center())
         return self
 
-    def set_label(self, index):
-        self.label = Tex(r'$A_' + str(index) + r'$', font_size=28).move_to(self.mobject.get_center())
+    def set_label(self, index, color=WHITE):
+        self.label = Tex(r'$A_{' + str(index) + r'}$', font_size=28, color=color).move_to(self.mobject.get_center())
 
-    def get_l_d(self, ax):
-        arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*MyPoint(0, self.vertices[3].y).as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DL).shift(DOWN * 0.2)
-        label = Tex(r'$\lambda |a_i^\prime|$', font_size=28).next_to(arr, DOWN, buff=0.08)
-        l_divider = Line(ax.c2p(0), ax.c2p(*MyPoint(0, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
+    def shift(self, ax, amount):
+        self.mobject.shift(amount)
+        new_points = []
+        new_verts = []
+        for p in self.points:
+            new_point = p + amount
+            new_coordinates = ax.p2c(new_point)
+            new_vert = MyPoint(new_coordinates[0], new_coordinates[1])
+            new_points.append(new_point)
+            new_verts.append(new_vert)
+        self.points = new_points
+        self.vertices = new_verts
+        self.label.move_to(self.mobject.get_center())
+
+    def get_l_d(self, ax, label=r'$\lambda |a_i^\prime|$'):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*MyPoint(self.vertices[0].x, self.vertices[3].y).as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DL).shift(DOWN * 0.2)
+        label = Tex(label, font_size=28).next_to(arr, DOWN, buff=0.08)
+        l_divider = Line(ax.c2p(*self.vertices[0].as_coordinates()), ax.c2p(*MyPoint(self.vertices[0].x, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
         r_divider = Line(ax.c2p(*self.vertices[3].to_vec2d()), ax.c2p(*MyPoint(self.vertices[3].x, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
         return arr, label, l_divider, r_divider
 
-    def get_r_d(self, ax):
+    def get_r_d(self, ax, label=r'$(1-\lambda) |a_i^\prime|$'):
         arr = DoubleArrow(start=ax.c2p(*self.vertices[3].as_coordinates()), end=ax.c2p(*self.vertices[2].as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).align_to(self.mobject, DR).shift(DOWN * 0.2)
-        label = Tex(r'$(1-\lambda) |a_i^\prime|$', font_size=28).next_to(arr, DOWN, buff=0.08).shift(RIGHT * 0.1)
+        label = Tex(label, font_size=28).next_to(arr, DOWN, buff=0.08).shift(RIGHT * 0.1)
         l_divider = Line(ax.c2p(*self.vertices[3].to_vec2d()), ax.c2p(*MyPoint(self.vertices[3].x, self.vertices[3].y - 0.05).to_vec2d()), stroke_width=1)
         r_divider = Line(ax.c2p(*self.vertices[2].to_vec2d()), ax.c2p(*MyPoint(self.vertices[2].x, self.vertices[2].y - 0.05).to_vec2d()), stroke_width=1)
         return arr, label, l_divider, r_divider
@@ -378,6 +395,20 @@ class Trapezoid:
         label = Tex(r'$\lambda |a_i^\prime|$', font_size=28).next_to(arr, RIGHT, buff=0.1)
         divider = Line(ax.c2p(*self.vertices[2].to_vec2d()), ax.c2p(*MyPoint(self.vertices[2].x + 0.05, self.vertices[3].y).to_vec2d()), stroke_width=1)
         return arr, label, divider
+
+    def get_u(self, ax):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[0].as_coordinates()), end=ax.c2p(*self.vertices[1].as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).next_to(self.mobject, UP, buff=0.08)
+        label = Tex(r'$|a_j^\prime| / (2 - \lambda)$', font_size=28).next_to(arr, UP, buff=0.08)
+        l_divider = Line(ax.c2p(*self.vertices[0].as_coordinates()), ax.c2p(*MyPoint(self.vertices[0].x, self.vertices[0].y + 0.05).to_vec2d()), stroke_width=1)
+        r_divider = Line(ax.c2p(*self.vertices[1].to_vec2d()), ax.c2p(*MyPoint(self.vertices[1].x, self.vertices[1].y + 0.05).to_vec2d()), stroke_width=1)
+        return arr, label, l_divider, r_divider
+
+    def get_l(self, ax):
+        arr = DoubleArrow(start=ax.c2p(*self.vertices[0].as_coordinates()), end=ax.c2p(*MyPoint(self.vertices[0].x, self.vertices[3].y).as_coordinates()), tip_length=0.1, stroke_width=2, buff=0).next_to(self.mobject, LEFT, buff=0.08)
+        label = Tex(r'$\frac{\lambda}{2 - \lambda} |a_j^\prime|$', font_size=28).next_to(arr, LEFT, buff=0.08)
+        u_divider = Line(ax.c2p(*self.vertices[0].as_coordinates()), ax.c2p(*MyPoint(self.vertices[0].x - 0.05, self.vertices[0].y).to_vec2d()), stroke_width=1)
+        d_divider = Line(ax.c2p(*self.vertices[3].to_vec2d()), ax.c2p(*MyPoint(self.vertices[0].x - 0.05, self.vertices[3].y).to_vec2d()), stroke_width=1)
+        return arr, label, u_divider, d_divider
 
 
 class Tiling:
