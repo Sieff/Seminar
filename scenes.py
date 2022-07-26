@@ -813,7 +813,8 @@ class Stripes(Scene):
         self.wait()
         self.next_section()
 
-        ai1 = MyLine(MyPoint(0, 0), MyPoint(ajp_len * 39 / 40, 0)).render(ax)
+        i1_factor = 39/40
+        ai1 = MyLine(MyPoint(0, 0), MyPoint(ajp_len * i1_factor, 0)).render(ax)
         i1_trapezoid = Trapezoid(_lambda, ai1.length() / 2).render(ax)
         i1_trapezoid.set_label('i_1', ORANGE)
         shift_amount = ax.c2p(0.1, -0.03) - i1_trapezoid.points[3]
@@ -879,7 +880,7 @@ class Stripes(Scene):
         self.play(tex_stripes.mobject_writes[1])
         self.next_section()
 
-        i1_triangle = Triangle(custom_vertices=[MyPoint(0, 0), MyPoint(ajp_len * 3 / 4, 0), MyPoint(ajp_len * 3 / 4, -ajp_len * 3 / 4)]).render(ax)
+        i1_triangle = Triangle(custom_vertices=[MyPoint(0, 0), MyPoint(i1_factor, 0), MyPoint(i1_factor, -i1_factor)]).render(ax)
         i1_triangle.mobject.align_to(i1_trapezoid.mobject, UL).set_color(ORANGE)
         i1_triangle_label = Tex(r'$\Delta_{i_1}$', font_size=28, color=ORANGE).next_to(i1_triangle.mobject, DR, buff=0).shift(UP * 1.5 + LEFT * 0.75)
         self.play(FadeIn(i1_triangle.mobject, i1_triangle_label))
