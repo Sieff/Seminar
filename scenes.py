@@ -174,8 +174,6 @@ class GreedyPackingAnimator(Animator):
                 self.play(FadeOut(packing.greedy_possible_points_polygons[idx].mobject))
         self.play(FadeOut(scan_line))
         self.play(FadeIn(packing.greedy_unpacked_space))
-        self.play(FadeOut(packing.greedy_unpacked_space))
-        self.play(FadeIn(packing.greedy_unpacked_space))
         return ax, packing.base_rect.mobject
 
 
@@ -186,7 +184,9 @@ class GreedyPacking(Scene):
         self.add(ax)
         self.add(base_rect)
         self.add(*tex_greedy_explaination.mobjects)
+        self.wait()
         for a in animator.animations:
+            self.next_section()
             self.play(a)
 
 
@@ -217,8 +217,6 @@ class TilePackingAnimator(Animator):
 
         self.play(FadeOut(scan_line))
         self.play(FadeIn(packing.tiling_unpacked_space))
-        self.play(FadeOut(packing.tiling_unpacked_space))
-        self.play(FadeIn(packing.tiling_unpacked_space))
         return ax, packing
 
 
@@ -229,7 +227,9 @@ class TilePacking(Scene):
         self.add(ax)
         self.add(packing.base_rect.mobject)
         self.add(*tex_tiling_explaination.mobjects)
+        self.wait()
         for a in animator.animations:
+            self.next_section()
             self.play(a)
 
 
@@ -568,9 +568,9 @@ class Trapezoids(Scene):
         self.next_section()
         self.play(pair.animate.scale(2).align_to(ax.c2p(0, 0), UL))
         self.next_section()
-        self.play(pair.animate.scale(0.01).align_to(ax.c2p(1, 0), UR))
+        self.play(pair.animate.scale(0.01).align_to(ax.c2p(1, 0), UR), run_time=4)
         self.next_section()
-        self.play(pair.animate.scale(100).align_to(ax.c2p(0, 0), UL))
+        self.play(pair.animate.scale(100).align_to(ax.c2p(0, 0), UL), run_time=4)
         below_area = MyPolygon(np.append(trapezoid.vertices[2:], [MyPoint(0, 0), MyPoint(1, 0)])).render(ax)
         u = MyPolygon([MyPoint(0, 0), MyPoint(0, 1), MyPoint(1, 1), MyPoint(1, 0)]).render(ax)
         below_area.mobject.set_color(ORANGE)
