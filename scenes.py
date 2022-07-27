@@ -247,6 +247,14 @@ class MultiPacking(Scene):
 
 
 class BetaProperties(Scene):
+    def get_rectangle_corners(self, bottom_left, top_right):
+        return [
+            (top_right[0], top_right[1]),
+            (bottom_left[0], top_right[1]),
+            (bottom_left[0], bottom_left[0]),
+            (top_right[0], bottom_left[0]),
+        ]
+
     def plot(self, ax, u):
         return ax.plot(lambda x: u / x, color=ORANGE, x_range=[u / 2, 2.0, 0.01])
 
@@ -314,18 +322,45 @@ class BetaProperties(Scene):
         self.play(FadeIn(h_line, x_label_2))
         self.next_section()
 
+        t = ValueTracker(0.2)
+
+        def get_rectangle():
+            polygon = Polygon(
+                *[
+                    ax.c2p(*i)
+                    for i in self.get_rectangle_corners(
+                        (0, 0), (t.get_value(), u / t.get_value())
+                    )
+                ]
+            )
+            polygon.set_fill(BLUE, opacity=0.5)
+            return polygon
+
+        polygon = always_redraw(get_rectangle)
+
+        dot = Dot(radius=0.05)
+        dot.add_updater(lambda x: x.move_to(ax.c2p(t.get_value(), u / t.get_value())))
+        dot.set_z_index(10)
+
+        self.play(FadeIn(dot))
+        self.play(FadeIn(polygon))
+        self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8).next_to(tex_beta_property_proof.mobjects[1], LEFT)))
+        self.play(tex_beta_property_proof.mobject_writes[1])
+        self.next_section()
+        self.play(t.animate.set_value(1), run_time=4)
+        self.play(t.animate.set_value(0.2), run_time=4)
+        self.next_section()
+
         rect = PackedRectangle(MyPoint(0, 0), MyPoint(0.2, 1)).render(ax, scaling)
         rect.mobject.stroke_width = 2
         rect.mobject.set_opacity(0.8)
         area = ax.get_area(graph, (0.2, 1), color=GREEN, stroke_width=2, opacity=0.8)
-        self.play(FadeIn(rect.mobject, area))
+        self.play(FadeIn(area))
 
         for idx, write in enumerate(tex_beta_property_proof.mobject_writes):
-            if idx == 0:
+            if idx <= 1:
                 continue
             self.next_section()
-            if idx == 1:
-                self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=BLUE, stroke_width=2, fill_opacity=0.8).next_to(tex_beta_property_proof.mobjects[idx], LEFT)))
             if idx == 2:
                 self.play(FadeIn(Rectangle(width=0.2, height=0.2, color=GREEN, stroke_width=2, fill_opacity=0.8).next_to(tex_beta_property_proof.mobjects[idx], LEFT)))
 
