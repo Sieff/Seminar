@@ -771,6 +771,16 @@ class Charging(Scene):
         self.play(FadeIn(triangle.mobject))
         self.next_section()
 
+        smaller_similar_triangle = Triangle(
+            custom_vertices=[triangle_tip, i_trapezoid.vertices[0], i_trapezoid.vertices[1]]).render(ax)
+        smaller_similar_triangle.mobject.align_to(i_trapezoid.points[1], DR)
+        smaller_similar_triangle.mobject.set_color(RED)
+        self.play(FadeIn(smaller_similar_triangle.mobject))
+        self.next_section()
+
+        self.play(FadeOut(smaller_similar_triangle.mobject))
+        self.next_section()
+
         similar_triangle = Triangle(custom_vertices=[i_trapezoid.vertices[0], i_trapezoid.vertices[2], i_trapezoid.vertices[3]]).render(ax)
         similar_triangle.mobject.align_to(i_trapezoid.points[0], UL)
         similar_triangle.mobject.set_color(RED)
