@@ -1,3 +1,5 @@
-docker run --rm -it -v "C:\\Users\\steff\\Documents\\mad\\Seminar:/manim" manimcommunity/manim manim -qm scene.py PackingGreedyRectangles
+Windows:
+docker run --rm -it -v "C:\\path\\to\\repo:/manim" manimcommunity/manim manim -qh --save_sections scene.py
 
-docker run --rm -it -v "/home/student/Dokumente/mad/Seminar:/manim" manimcommunity/manim manim -qh scene.py PackingGreedyRectangles
+Linux:
+sudo docker run --rm -it -v "/path/to/repo:/manim" manimcommunity/manim manim -qh --save_sections scenes.py
